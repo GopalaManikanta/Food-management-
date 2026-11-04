@@ -74,48 +74,30 @@ const Login = () => {
             <ChefHat className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            Crave<span className="text-orange-600">Dash</span>
+            Crave<span className="text-orange-600">Dash</span> Admin
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Sign in to explore delicious food near you
+            Sign in to access Food Delivery Admin Operations
           </p>
         </div>
 
-        {/* 1-Click Quick Demo Login Profiles */}
+        {/* 1-Click Quick Admin Demo Login */}
         <div className="mb-5 p-3 rounded-2xl bg-orange-50/80 border border-orange-100">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              1-Click Demo Fill:
+              1-Click Admin Demo Fill:
             </span>
             <span className="text-[10px] text-orange-600 font-semibold">Instant Test</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleFillDemo('customer@foodie.com', 'Password@123')}
-              className="py-1.5 px-2 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-xs font-bold text-slate-700 transition shadow-2xs text-center cursor-pointer flex flex-col items-center"
-            >
-              <span>Customer</span>
-              <span className="text-[10px] opacity-70">Rahul</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFillDemo('admin@foodie.com', 'Password@123')}
-              className="py-1.5 px-2 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-xs font-bold text-slate-700 transition shadow-2xs text-center cursor-pointer flex flex-col items-center"
-            >
-              <span>Admin</span>
-              <span className="text-[10px] opacity-70">Vikram</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFillDemo('rider@foodie.com', 'Password@123')}
-              className="py-1.5 px-2 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-xs font-bold text-slate-700 transition shadow-2xs text-center cursor-pointer flex flex-col items-center"
-            >
-              <span>Rider</span>
-              <span className="text-[10px] opacity-70">Suresh</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => handleFillDemo('admin@foodie.com', 'Password@123')}
+            className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-xs font-bold text-slate-800 transition shadow-2xs text-center cursor-pointer flex items-center justify-center gap-2 group"
+          >
+            <ChefHat className="w-4 h-4 text-orange-600 group-hover:text-white transition" />
+            <span>Fill Admin: admin@foodie.com (Vikram)</span>
+          </button>
         </div>
 
         {/* Login Form */}
@@ -124,7 +106,7 @@ const Login = () => {
           {/* Email / Mobile Input */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Email or Mobile Number
+              Admin Email or Mobile
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -132,7 +114,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
-                placeholder="customer@foodie.com or 9876543210"
+                placeholder="admin@foodie.com or 9123456780"
                 {...register('identifier', {
                   required: 'Email or mobile number is required',
                   validate: (val) => {

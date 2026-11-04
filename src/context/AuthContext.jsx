@@ -10,19 +10,8 @@ export const useAuth = () => {
   return context;
 };
 
-// Seed demo users for testing (Food delivery roles: Customer, Admin, Rider)
+// Seed demo users - ONLY Admin role
 const DEFAULT_USERS = [
-  {
-    id: 'user_cust_01',
-    name: 'Rahul Sharma',
-    email: 'customer@foodie.com',
-    phone: '9876543210',
-    password: 'Password@123',
-    role: 'Customer',
-    address: 'Flat 402, Jubilee Hills, Hyderabad - 500033',
-    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
-    createdAt: new Date().toISOString()
-  },
   {
     id: 'user_admin_01',
     name: 'Vikram Oberoi',
@@ -34,28 +23,20 @@ const DEFAULT_USERS = [
     address: 'Plot 18, HITEC City, Hyderabad',
     avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80',
     createdAt: new Date().toISOString()
-  },
-  {
-    id: 'user_rider_01',
-    name: 'Suresh Kumar',
-    email: 'rider@foodie.com',
-    phone: '9988776655',
-    password: 'Password@123',
-    role: 'Rider',
-    address: 'Madhapur Main Road, Hyderabad',
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80',
-    createdAt: new Date().toISOString()
   }
 ];
 
 export const AuthProvider = ({ children }) => {
-  // 1. Initial registered users list from LocalStorage
+  // 1. Initial registered users list from LocalStorage (ONLY Admin accounts retained)
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     try {
       const stored = localStorage.getItem('food_delivery_registered_users');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const adminOnly = parsed.filter((u) => u.role === 'Admin');
+          if (adminOnly.length > 0) return adminOnly;
+        }
       }
       return DEFAULT_USERS;
     } catch {
@@ -63,11 +44,15 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // 2. Active logged-in user session from LocalStorage
+  // 2. Active logged-in user session from LocalStorage (ONLY Admin session allowed)
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const stored = localStorage.getItem('food_delivery_user');
-      return stored ? JSON.parse(stored) : null;
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && parsed.role === 'Admin') return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -85,7 +70,7 @@ export const AuthProvider = ({ children }) => {
   // Persist or clear current user session in LocalStorage
   useEffect(() => {
     try {
-      if (currentUser) {
+      if (currentUser && currentUser.role === 'Admin') {
         localStorage.setItem('food_delivery_user', JSON.stringify(currentUser));
       } else {
         localStorage.removeItem('food_delivery_user');
@@ -111,9 +96,9 @@ export const AuthProvider = ({ children }) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        phone: user.phone || '9876543210',
-        role: user.role || 'Customer',
-        address: user.address || 'H.No 12, Main Street',
+        phone: user.phone || '9123456780',
+        role: 'Admin',
+        address: user.address || 'H.No 18, Cyber Towers, Hyderabad',
         avatar: user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`,
         loggedInAt: new Date().toISOString()
       };
@@ -121,18 +106,18 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(session);
       return {
         success: true,
-        message: `Welcome back, ${user.name}! 🍕`,
+        message: `Welcome back, Admin ${user.name}! 👨‍🍳`,
         user: session
       };
     }
 
     return {
       success: false,
-      message: 'Invalid credentials. Please verify your email/phone and password.'
+      message: 'Invalid admin credentials. Please verify your email/phone and password.'
     };
   };
 
-  // Register Handler
+  // Register Handler (ONLY Admin role)
   const register = (userData) => {
     const emailClean = (userData.email || '').trim().toLowerCase();
     const phoneClean = (userData.phone || '').trim().replace(/\D/g, '');
@@ -155,26 +140,26 @@ export const AuthProvider = ({ children }) => {
     }
 
     const newUser = {
-      id: `user_${Date.now()}`,
+      id: `admin_${Date.now()}`,
       name: userData.name.trim(),
       email: emailClean,
       phone: phoneClean || userData.phone || '',
       password: userData.password,
-      role: userData.role || 'Customer',
-      address: userData.address ? userData.address.trim() : 'Default Delivery Location',
+      role: 'Admin',
+      address: userData.address ? userData.address.trim() : 'Admin Operations Headquarters',
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userData.name)}`,
       createdAt: new Date().toISOString()
     };
 
     setRegisteredUsers((prev) => [newUser, ...prev]);
 
-    // Automatically create session upon registration
+    // Automatically create admin session upon registration
     const session = {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
       phone: newUser.phone,
-      role: newUser.role,
+      role: 'Admin',
       address: newUser.address,
       avatar: newUser.avatar,
       loggedInAt: new Date().toISOString()
@@ -183,7 +168,7 @@ export const AuthProvider = ({ children }) => {
 
     return {
       success: true,
-      message: `Account created successfully! Welcome, ${newUser.name}! 🎉`,
+      message: `Admin account created successfully! Welcome, ${newUser.name}! 🎉`,
       user: session
     };
   };
@@ -202,7 +187,7 @@ export const AuthProvider = ({ children }) => {
     if (userIndex === -1) {
       return {
         success: false,
-        message: 'No registered account found with this email or mobile number.'
+        message: 'No registered admin account found with this email or mobile number.'
       };
     }
 
@@ -217,7 +202,7 @@ export const AuthProvider = ({ children }) => {
 
     return {
       success: true,
-      message: 'Password reset successful! You can now log in with your new password. 🔐'
+      message: 'Admin password reset successful! You can now log in with your new password. 🔐'
     };
   };
 
@@ -226,7 +211,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     return {
       success: true,
-      message: 'Logged out successfully. Have a great day! 👋'
+      message: 'Admin logged out successfully. Have a great day! 👋'
     };
   };
 

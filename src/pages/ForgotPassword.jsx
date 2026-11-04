@@ -100,11 +100,11 @@ const ForgotPassword = () => {
             <KeyRound className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {step === 1 ? 'Reset Password' : 'New Password'}
+            {step === 1 ? 'Reset Admin Password' : 'New Admin Password'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             {step === 1
-              ? 'Enter your registered email or mobile to recover account'
+              ? 'Enter your registered Admin email or mobile to recover account'
               : `Creating new password for: ${targetAccount}`}
           </p>
         </div>
@@ -120,7 +120,7 @@ const ForgotPassword = () => {
           <form onSubmit={handleSubmitLookup(onLookupSubmit)} className="space-y-4" noValidate>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Registered Email or Mobile
+                Admin Email or Mobile
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -128,7 +128,7 @@ const ForgotPassword = () => {
                 </div>
                 <input
                   type="text"
-                  placeholder="e.g. customer@foodie.com or 9876543210"
+                  placeholder="e.g. admin@foodie.com or 9123456780"
                   {...registerLookup('identifier', {
                     required: 'Email or mobile number is required'
                   })}
@@ -148,7 +148,7 @@ const ForgotPassword = () => {
 
             <div className="p-3 bg-amber-50/80 rounded-2xl border border-amber-200/60 text-xs text-amber-800 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>Demo accounts: <b>customer@foodie.com</b> or <b>admin@foodie.com</b></span>
+              <span>Admin account: <b>admin@foodie.com</b> (Password@123)</span>
             </div>
 
             <button

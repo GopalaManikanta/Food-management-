@@ -33,7 +33,7 @@ const Register = () => {
       email: '',
       phone: '',
       address: '',
-      role: 'Customer',
+      role: 'Admin',
       password: '',
       confirmPassword: '',
       agreeTerms: true
@@ -48,7 +48,7 @@ const Register = () => {
       email: data.email,
       phone: data.phone,
       address: data.address,
-      role: data.role,
+      role: 'Admin',
       password: data.password
     });
 
@@ -83,10 +83,10 @@ const Register = () => {
             <ChefHat className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            Join Crave<span className="text-orange-600">Dash</span>
+            Join Crave<span className="text-orange-600">Dash</span> Admin
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Create an account to start ordering delicious food
+            Create an Admin account to manage Food Delivery operations
           </p>
         </div>
 
@@ -124,16 +124,14 @@ const Register = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Role
+                Account Role
               </label>
-              <select
-                {...register('role')}
-                className="w-full px-3 py-2.5 rounded-2xl border border-slate-200 bg-slate-50/80 text-xs sm:text-sm font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-500"
-              >
-                <option value="Customer">🍔 Customer</option>
-                <option value="Admin">👨‍🍳 Restaurant Admin</option>
-                <option value="Rider">🛵 Delivery Rider</option>
-              </select>
+              <div className="w-full px-3.5 py-2.5 rounded-2xl border border-orange-200 bg-orange-50/80 text-xs sm:text-sm font-bold text-orange-800 flex items-center justify-between">
+                <span>👨‍🍳 Admin</span>
+                <span className="text-[10px] font-black uppercase tracking-wider bg-orange-200 text-orange-900 px-2 py-0.5 rounded-full">
+                  Admin Only
+                </span>
+              </div>
             </div>
           </div>
 
