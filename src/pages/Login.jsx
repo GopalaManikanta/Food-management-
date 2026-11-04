@@ -11,7 +11,8 @@ import {
   ArrowRight,
   ShieldCheck,
   Sparkles,
-  ChefHat
+  ChefHat,
+  User
 } from 'lucide-react';
 
 const Login = () => {
@@ -20,7 +21,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const from = location.state?.from?.pathname || '/dashboard';
+  const from = location.state?.from?.pathname;
 
   const {
     register,
@@ -39,7 +40,11 @@ const Login = () => {
     const res = login(data.identifier, data.password);
     if (res.success) {
       toast.success(res.message);
-      navigate(from, { replace: true });
+      if (from && from !== '/dashboard' && from !== '/customer') {
+        navigate(from, { replace: true });
+      } else {
+        navigate(res.user?.role === 'Customer' ? '/customer' : '/dashboard', { replace: true });
+      }
     } else {
       toast.error(res.message);
     }
@@ -62,42 +67,60 @@ const Login = () => {
         }}
       />
 
-      {/* Dark Ambient Overlay for Contrast */}
+      {/* Dark Ambient Overlay */}
       <div className="absolute inset-0 bg-gradient-to-tr from-black/85 via-black/60 to-black/75" />
 
-      {/* FLOATING CURVED LOGIN CARD (Smooth Curve Shape Design) */}
+      {/* FLOATING CURVED LOGIN CARD */}
       <div className="relative z-10 w-full max-w-md bg-white/95 backdrop-blur-xl rounded-[36px] sm:rounded-[44px] shadow-2xl border border-white/40 p-6 sm:p-9 text-slate-900 transition-all duration-300">
         
         {/* Brand Header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-orange-500 to-rose-600 text-white shadow-lg shadow-orange-500/30 mb-3">
+        <div className="text-center mb-5">
+          <div className="inline-flex p-3 rounded-2xl bg-gradient-to-tr from-orange-500 to-rose-600 text-white shadow-lg shadow-orange-500/30 mb-2">
             <ChefHat className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            Crave<span className="text-orange-600">Dash</span> Admin
+            Crave<span className="text-orange-600">Dash</span> Portal
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Sign in to access Food Delivery Admin Operations
+            Sign in to access Admin Operations or Customer Food Hub
           </p>
         </div>
 
-        {/* 1-Click Quick Admin Demo Login */}
-        <div className="mb-5 p-3 rounded-2xl bg-orange-50/80 border border-orange-100">
-          <div className="flex items-center justify-between mb-2">
+        {/* 1-Click Quick Demo Fill Buttons (Admin & Customer) */}
+        <div className="mb-5 p-3 rounded-2xl bg-orange-50/80 border border-orange-100 space-y-2">
+          <div className="flex items-center justify-between">
             <span className="text-[11px] font-extrabold text-orange-950 uppercase tracking-wider flex items-center gap-1">
               <Sparkles className="w-3.5 h-3.5 text-orange-600" />
-              1-Click Admin Demo Fill:
+              1-Click Instant Demo:
             </span>
-            <span className="text-[10px] text-orange-600 font-semibold">Instant Test</span>
+            <span className="text-[10px] text-orange-600 font-semibold">Select Role</span>
           </div>
-          <button
-            type="button"
-            onClick={() => handleFillDemo('admin@foodie.com', 'Password@123')}
-            className="w-full py-2.5 px-3 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-xs font-bold text-slate-800 transition shadow-2xs text-center cursor-pointer flex items-center justify-center gap-2 group"
-          >
-            <ChefHat className="w-4 h-4 text-orange-600 group-hover:text-white transition" />
-            <span>Fill Admin: admin@foodie.com (Vikram)</span>
-          </button>
+
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => handleFillDemo('admin@foodie.com', 'Password@123')}
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-[11px] font-bold text-slate-800 transition shadow-2xs text-left cursor-pointer flex items-center gap-1.5 group"
+            >
+              <ChefHat className="w-3.5 h-3.5 text-orange-600 group-hover:text-white shrink-0" />
+              <div className="min-w-0">
+                <span className="block font-black truncate">Admin Demo</span>
+                <span className="block text-[9px] text-slate-400 group-hover:text-white/80 truncate">Vikram Oberoi</span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleFillDemo('customer@foodie.com', 'Password@123')}
+              className="py-2 px-2.5 rounded-xl bg-white hover:bg-orange-600 hover:text-white border border-orange-200 text-[11px] font-bold text-slate-800 transition shadow-2xs text-left cursor-pointer flex items-center gap-1.5 group"
+            >
+              <User className="w-3.5 h-3.5 text-orange-600 group-hover:text-white shrink-0" />
+              <div className="min-w-0">
+                <span className="block font-black truncate">Customer Demo</span>
+                <span className="block text-[9px] text-slate-400 group-hover:text-white/80 truncate">Rahul Sharma</span>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Login Form */}
@@ -106,7 +129,7 @@ const Login = () => {
           {/* Email / Mobile Input */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Admin Email or Mobile
+              Email or Mobile Number
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -114,7 +137,7 @@ const Login = () => {
               </div>
               <input
                 type="text"
-                placeholder="admin@foodie.com or 9123456780"
+                placeholder="e.g. admin@foodie.com or 9123456780"
                 {...register('identifier', {
                   required: 'Email or mobile number is required',
                   validate: (val) => {
@@ -136,7 +159,7 @@ const Login = () => {
             )}
           </div>
 
-          {/* Password with Show/Hide Toggle */}
+          {/* Password Input */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
@@ -144,7 +167,7 @@ const Login = () => {
               </label>
               <Link
                 to="/forgot-password"
-                className="text-xs font-semibold text-orange-600 hover:text-orange-700 transition"
+                className="text-xs font-bold text-orange-600 hover:text-orange-700 hover:underline"
               >
                 Forgot Password?
               </Link>
@@ -155,12 +178,11 @@ const Login = () => {
               </div>
               <input
                 type={showPassword ? 'text' : 'password'}
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 {...register('password', {
-                  required: 'Password is required',
-                  minLength: { value: 6, message: 'Password must be at least 6 characters' }
+                  required: 'Password is required'
                 })}
-                className={`w-full pl-10 pr-11 py-3 rounded-2xl border text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
+                className={`w-full pl-10 pr-10 py-3 rounded-2xl border text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
                   errors.password
                     ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/40'
                     : 'border-slate-200 focus:ring-orange-200 focus:border-orange-500'
@@ -169,10 +191,9 @@ const Login = () => {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
               >
-                {showPassword ? <EyeOff className="w-4 h-4 text-orange-600" /> : <Eye className="w-4 h-4" />}
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             {errors.password && (
@@ -181,52 +202,43 @@ const Login = () => {
           </div>
 
           {/* Remember Me */}
-          <div className="flex items-center justify-between text-xs pt-0.5">
-            <label className="flex items-center gap-2 cursor-pointer select-none">
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 {...register('rememberMe')}
-                className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 border-slate-300"
+                className="w-4 h-4 rounded text-orange-600 focus:ring-orange-400 border-slate-300"
               />
-              <span className="text-slate-600 font-medium">Keep me signed in</span>
+              <span className="text-xs font-semibold text-slate-600">Keep me logged in</span>
             </label>
-            <span className="text-emerald-600 font-medium flex items-center gap-1">
-              <ShieldCheck className="w-3.5 h-3.5" /> 256-bit Secure
-            </span>
           </div>
 
           {/* Submit Button */}
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-2 py-3.5 px-4 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-orange-500 via-orange-600 to-rose-600 hover:from-orange-600 hover:to-rose-700 shadow-lg shadow-orange-500/30 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+            className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white font-extrabold text-sm shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50"
           >
-            {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>Sign In & Order Food</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+            <span>{isSubmitting ? 'Signing In...' : 'Sign In'}</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        {/* Sign Up Link */}
-        <div className="mt-6 pt-5 border-t border-slate-100 text-center">
-          <p className="text-xs sm:text-sm text-slate-500">
-            Don't have an account?{' '}
-            <Link
-              to="/register"
-              className="font-bold text-orange-600 hover:text-orange-700 transition inline-flex items-center gap-1"
-            >
-              Sign Up <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </p>
+        {/* Footer Link to Register */}
+        <div className="mt-6 text-center text-xs text-slate-500">
+          New to CraveDash?{' '}
+          <Link to="/register" className="font-extrabold text-orange-600 hover:underline">
+            Create an Account
+          </Link>
+        </div>
+
+        {/* Security Badge */}
+        <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+          <span>Role-Based Access Control • 256-Bit SSL Protection</span>
         </div>
 
       </div>
-
     </div>
   );
 };

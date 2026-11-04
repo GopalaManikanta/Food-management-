@@ -10,7 +10,7 @@ export const useAuth = () => {
   return context;
 };
 
-// Seed demo users - ONLY Admin role
+// Seed demo users for both Admin and Customer roles
 const DEFAULT_USERS = [
   {
     id: 'user_admin_01',
@@ -23,19 +23,34 @@ const DEFAULT_USERS = [
     address: 'Plot 18, HITEC City, Hyderabad',
     avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80',
     createdAt: new Date().toISOString()
+  },
+  {
+    id: 'user_customer_01',
+    name: 'Rahul Sharma',
+    email: 'customer@foodie.com',
+    phone: '9876543210',
+    password: 'Password@123',
+    role: 'Customer',
+    address: 'Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80',
+    createdAt: new Date().toISOString()
   }
 ];
 
 export const AuthProvider = ({ children }) => {
-  // 1. Initial registered users list from LocalStorage (ONLY Admin accounts retained)
+  // 1. Initial registered users list from LocalStorage
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     try {
       const stored = localStorage.getItem('food_delivery_registered_users');
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          const adminOnly = parsed.filter((u) => u.role === 'Admin');
-          if (adminOnly.length > 0) return adminOnly;
+          const hasAdmin = parsed.some((u) => u.email === 'admin@foodie.com');
+          const hasCustomer = parsed.some((u) => u.email === 'customer@foodie.com');
+          let merged = [...parsed];
+          if (!hasAdmin) merged.push(DEFAULT_USERS[0]);
+          if (!hasCustomer) merged.push(DEFAULT_USERS[1]);
+          return merged;
         }
       }
       return DEFAULT_USERS;
@@ -44,15 +59,26 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
-  // 2. Active logged-in user session from LocalStorage (ONLY Admin session allowed)
+  // 2. Active logged-in user session from LocalStorage
   const [currentUser, setCurrentUser] = useState(() => {
     try {
       const stored = localStorage.getItem('food_delivery_user');
       if (stored) {
         const parsed = JSON.parse(stored);
-        if (parsed && parsed.role === 'Admin') return parsed;
+        if (parsed && (parsed.role === 'Admin' || parsed.role === 'Customer')) {
+          return parsed;
+        }
       }
-      return null;
+      return {
+        id: DEFAULT_USERS[0].id,
+        name: DEFAULT_USERS[0].name,
+        email: DEFAULT_USERS[0].email,
+        phone: DEFAULT_USERS[0].phone,
+        role: DEFAULT_USERS[0].role,
+        address: DEFAULT_USERS[0].address,
+        avatar: DEFAULT_USERS[0].avatar,
+        loggedInAt: new Date().toISOString()
+      };
     } catch {
       return null;
     }
@@ -70,7 +96,7 @@ export const AuthProvider = ({ children }) => {
   // Persist or clear current user session in LocalStorage
   useEffect(() => {
     try {
-      if (currentUser && currentUser.role === 'Admin') {
+      if (currentUser) {
         localStorage.setItem('food_delivery_user', JSON.stringify(currentUser));
       } else {
         localStorage.removeItem('food_delivery_user');
@@ -80,7 +106,7 @@ export const AuthProvider = ({ children }) => {
     }
   }, [currentUser]);
 
-  // Login Handler (Supports Email or 10-digit Phone)
+  // Login Handler (Supports Email or 10-digit Phone for Admin or Customer)
   const login = (identifier, password) => {
     const cleanId = (identifier || '').trim().toLowerCase();
     const cleanPassword = (password || '').trim();
@@ -96,9 +122,9 @@ export const AuthProvider = ({ children }) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        phone: user.phone || '9123456780',
-        role: 'Admin',
-        address: user.address || 'H.No 18, Cyber Towers, Hyderabad',
+        phone: user.phone || '9876543210',
+        role: user.role || 'Customer',
+        address: user.address || 'Hyderabad, Telangana',
         avatar: user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`,
         loggedInAt: new Date().toISOString()
       };
@@ -106,18 +132,18 @@ export const AuthProvider = ({ children }) => {
       setCurrentUser(session);
       return {
         success: true,
-        message: `Welcome back, Admin ${user.name}! 👨‍🍳`,
+        message: `Welcome back, ${session.role === 'Admin' ? 'Admin ' : ''}${user.name}! ${session.role === 'Admin' ? '👨‍🍳' : '👋'}`,
         user: session
       };
     }
 
     return {
       success: false,
-      message: 'Invalid admin credentials. Please verify your email/phone and password.'
+      message: 'Invalid credentials. Please verify your email/phone and password.'
     };
   };
 
-  // Register Handler (ONLY Admin role)
+  // Register Handler (Supports Customer and Admin role)
   const register = (userData) => {
     const emailClean = (userData.email || '').trim().toLowerCase();
     const phoneClean = (userData.phone || '').trim().replace(/\D/g, '');
@@ -139,27 +165,29 @@ export const AuthProvider = ({ children }) => {
       }
     }
 
+    const assignedRole = userData.role === 'Admin' ? 'Admin' : 'Customer';
+
     const newUser = {
-      id: `admin_${Date.now()}`,
+      id: `${assignedRole.toLowerCase()}_${Date.now()}`,
       name: userData.name.trim(),
       email: emailClean,
       phone: phoneClean || userData.phone || '',
       password: userData.password,
-      role: 'Admin',
-      address: userData.address ? userData.address.trim() : 'Admin Operations Headquarters',
+      role: assignedRole,
+      address: userData.address ? userData.address.trim() : (assignedRole === 'Admin' ? 'Admin Operations HQ, Hyderabad' : 'Flat 402, Jubilee Hills, Hyderabad'),
       avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(userData.name)}`,
       createdAt: new Date().toISOString()
     };
 
     setRegisteredUsers((prev) => [newUser, ...prev]);
 
-    // Automatically create admin session upon registration
+    // Automatically create session upon registration
     const session = {
       id: newUser.id,
       name: newUser.name,
       email: newUser.email,
       phone: newUser.phone,
-      role: 'Admin',
+      role: newUser.role,
       address: newUser.address,
       avatar: newUser.avatar,
       loggedInAt: new Date().toISOString()
@@ -168,7 +196,7 @@ export const AuthProvider = ({ children }) => {
 
     return {
       success: true,
-      message: `Admin account created successfully! Welcome, ${newUser.name}! 🎉`,
+      message: `Account created successfully! Welcome, ${newUser.name}! 🎉`,
       user: session
     };
   };
@@ -187,7 +215,7 @@ export const AuthProvider = ({ children }) => {
     if (userIndex === -1) {
       return {
         success: false,
-        message: 'No registered admin account found with this email or mobile number.'
+        message: 'No registered account found with this email or mobile number.'
       };
     }
 
@@ -202,7 +230,7 @@ export const AuthProvider = ({ children }) => {
 
     return {
       success: true,
-      message: 'Admin password reset successful! You can now log in with your new password. 🔐'
+      message: 'Password reset successful! You can now log in with your new password. 🔐'
     };
   };
 
@@ -211,7 +239,7 @@ export const AuthProvider = ({ children }) => {
     setCurrentUser(null);
     return {
       success: true,
-      message: 'Admin logged out successfully. Have a great day! 👋'
+      message: 'Logged out successfully. Have a great day! 👋'
     };
   };
 

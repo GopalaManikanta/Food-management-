@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+
 import { toast } from 'react-toastify';
+import Navbar from '../components/Navbar';
 import {
   Store,
   UtensilsCrossed,
@@ -12,10 +13,7 @@ import {
   TrendingUp,
   PlusCircle,
   Search,
-  Clock,
-  LogOut,
   X,
-  ChefHat,
   Zap,
   Flame,
   ArrowUpRight,
@@ -24,13 +22,9 @@ import {
 } from 'lucide-react';
 
 const Dashboard = () => {
-  const { currentUser, logout } = useAuth();
-  const navigate = useNavigate();
+  const { currentUser } = useAuth();
 
-  // 1. Live Clock State
-  const [currentDateTime, setCurrentDateTime] = useState('');
-
-  // 2. Real-Time Orders List (Starts at ZERO: Empty array [])
+  // 1. Real-Time Orders List (Starts at ZERO: Empty array [])
   const [orders, setOrders] = useState(() => {
     try {
       const saved = localStorage.getItem('food_delivery_orders');
@@ -44,7 +38,7 @@ const Dashboard = () => {
     }
   });
 
-  // 3. Real-Time Counters (Starts at ZERO: 0)
+  // 2. Real-Time Counters (Starts at ZERO: 0)
   const [totalFoodItems, setTotalFoodItems] = useState(() => {
     const saved = localStorage.getItem('food_delivery_food_count');
     return saved ? parseInt(saved, 10) : 0;
@@ -61,7 +55,7 @@ const Dashboard = () => {
     return new Set(orders.map((o) => o.customerName)).size;
   }, [orders]);
 
-  // 4. UI Filters & Modals
+  // 3. UI Filters & Modals
   const [revenuePeriod, setRevenuePeriod] = useState('Today');
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
@@ -89,10 +83,32 @@ const Dashboard = () => {
   useEffect(() => {
     try {
       localStorage.setItem('food_delivery_orders', JSON.stringify(orders));
+      window.dispatchEvent(new Event('food_delivery_orders_updated'));
     } catch (e) {
       console.error('Failed to sync orders to localStorage', e);
     }
   }, [orders]);
+
+  // Listen for external real-time customer order placements
+  useEffect(() => {
+    const handleSyncOrders = () => {
+      try {
+        const saved = localStorage.getItem('food_delivery_orders');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) setOrders(parsed);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    window.addEventListener('food_delivery_order_placed', handleSyncOrders);
+    window.addEventListener('storage', handleSyncOrders);
+    return () => {
+      window.removeEventListener('food_delivery_order_placed', handleSyncOrders);
+      window.removeEventListener('storage', handleSyncOrders);
+    };
+  }, []);
 
   // Sync food count to LocalStorage
   useEffect(() => {
@@ -111,26 +127,6 @@ const Dashboard = () => {
       console.error('Failed to sync restaurant count', e);
     }
   }, [totalRestaurants]);
-
-  // Live Clock Ticker
-  useEffect(() => {
-    const updateTime = () => {
-      const now = new Date();
-      setCurrentDateTime(
-        now.toLocaleDateString('en-US', {
-          weekday: 'short',
-          month: 'short',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit'
-        })
-      );
-    };
-    updateTime();
-    const timer = setInterval(updateTime, 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Compute Live Metrics dynamically from real-time state
   const metrics = useMemo(() => {
@@ -291,15 +287,6 @@ const Dashboard = () => {
     toast.info('Dashboard reset to 0! All counts and orders cleared.');
   };
 
-  // Logout
-  const handleLogout = () => {
-    const res = logout();
-    if (res.success) {
-      toast.info(res.message);
-      navigate('/login');
-    }
-  };
-
   // Status Badge Helper
   const getStatusBadge = (status) => {
     switch (status) {
@@ -357,78 +344,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col select-none">
       
-      {/* 1. TOP RESPONSIVE NAVIGATION HEADER */}
-      <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-30 px-4 sm:px-6 lg:px-8 flex items-center justify-between shadow-2xs">
-        
-        {/* Brand Logo & Tag */}
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-2xl bg-gradient-to-tr from-orange-500 to-rose-600 text-white shadow-md shadow-orange-500/20">
-            <ChefHat className="w-5 h-5" />
-          </div>
-          <div>
-            <h1 className="font-black text-lg sm:text-xl text-slate-900 tracking-tight leading-tight">
-              Crave<span className="text-orange-600">Dash</span>
-            </h1>
-            <span className="hidden sm:block text-[10px] text-orange-600 font-extrabold uppercase tracking-wider -mt-1">
-              Food Delivery Management
-            </span>
-          </div>
-        </div>
-
-        {/* Live Clock & Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          
-          {/* Live Date-Time Pill */}
-          <div className="hidden md:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-mono text-slate-700">
-            <Clock className="w-3.5 h-3.5 text-orange-600" />
-            <span>{currentDateTime}</span>
-          </div>
-
-          {/* Quick Mock Order Simulator Button */}
-          <button
-            type="button"
-            onClick={handleSimulateLiveOrder}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-md shadow-orange-600/20 cursor-pointer active:scale-95"
-            title="Create a mock order to test live state"
-          >
-            <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>+ Create Mock Order</span>
-          </button>
-
-          {/* User Profile Pill */}
-          <div className="flex items-center gap-2 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-            {currentUser?.avatar ? (
-              <img
-                src={currentUser.avatar}
-                alt={currentUser.name}
-                className="w-7 h-7 rounded-full object-cover border border-orange-300"
-              />
-            ) : (
-              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-500 to-rose-600 text-white flex items-center justify-center font-bold text-xs">
-                {currentUser?.name?.charAt(0) || 'U'}
-              </div>
-            )}
-            <div className="hidden sm:flex flex-col text-left">
-              <span className="text-xs font-bold text-slate-900 leading-tight max-w-[100px] truncate">
-                {currentUser?.name || 'User'}
-              </span>
-              <span className="text-[10px] text-orange-600 font-semibold leading-tight">
-                {currentUser?.role || 'Admin'}
-              </span>
-            </div>
-          </div>
-
-          {/* Logout Button */}
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="p-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 transition cursor-pointer"
-            title="Log Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
+      {/* 1. PROFESSIONAL UNIFIED NAVBAR */}
+      <Navbar onSimulateOrder={handleSimulateLiveOrder} />
 
       {/* 2. MAIN DASHBOARD CONTENT */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">

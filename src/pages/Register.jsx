@@ -18,6 +18,7 @@ import {
 const Register = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [selectedRole, setSelectedRole] = useState('Customer');
 
   const { register: registerAuth } = useAuth();
   const navigate = useNavigate();
@@ -33,7 +34,6 @@ const Register = () => {
       email: '',
       phone: '',
       address: '',
-      role: 'Admin',
       password: '',
       confirmPassword: '',
       agreeTerms: true
@@ -48,13 +48,13 @@ const Register = () => {
       email: data.email,
       phone: data.phone,
       address: data.address,
-      role: 'Admin',
+      role: selectedRole,
       password: data.password
     });
 
     if (res.success) {
       toast.success(res.message);
-      navigate('/dashboard');
+      navigate(selectedRole === 'Customer' ? '/customer' : '/dashboard');
     } else {
       toast.error(res.message);
     }
@@ -83,10 +83,10 @@ const Register = () => {
             <ChefHat className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            Join Crave<span className="text-orange-600">Dash</span> Admin
+            Join Crave<span className="text-orange-600">Dash</span>
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-            Create an Admin account to manage Food Delivery operations
+            Create an account to explore food delivery or manage operations
           </p>
         </div>
 
@@ -124,13 +124,33 @@ const Register = () => {
 
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Account Role
+                Account Role *
               </label>
-              <div className="w-full px-3.5 py-2.5 rounded-2xl border border-orange-200 bg-orange-50/80 text-xs sm:text-sm font-bold text-orange-800 flex items-center justify-between">
-                <span>👨‍🍳 Admin</span>
-                <span className="text-[10px] font-black uppercase tracking-wider bg-orange-200 text-orange-900 px-2 py-0.5 rounded-full">
-                  Admin Only
-                </span>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('Customer')}
+                  className={`py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1 ${
+                    selectedRole === 'Customer'
+                      ? 'bg-orange-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Customer</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedRole('Admin')}
+                  className={`py-1.5 rounded-xl text-xs font-black transition cursor-pointer flex items-center justify-center gap-1 ${
+                    selectedRole === 'Admin'
+                      ? 'bg-orange-600 text-white shadow-2xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <ChefHat className="w-3.5 h-3.5" />
+                  <span>Admin</span>
+                </button>
               </div>
             </div>
           </div>
@@ -147,12 +167,12 @@ const Register = () => {
                 </div>
                 <input
                   type="email"
-                  placeholder="name@example.com"
+                  placeholder="name@foodie.com"
                   {...register('email', {
-                    required: 'Email is required',
+                    required: 'Email address is required',
                     pattern: {
                       value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                      message: 'Enter valid email'
+                      message: 'Enter a valid email address'
                     }
                   })}
                   className={`w-full pl-10 pr-3 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
@@ -177,13 +197,12 @@ const Register = () => {
                 </div>
                 <input
                   type="tel"
-                  placeholder="10-digit number"
-                  maxLength={10}
+                  placeholder="9876543210"
                   {...register('phone', {
-                    required: 'Mobile is required',
+                    required: 'Mobile number is required',
                     pattern: {
-                      value: /^[6-9]\d{9}$/,
-                      message: 'Valid 10-digit number'
+                      value: /^[0-9]{10}$/,
+                      message: 'Enter exactly 10 digits'
                     }
                   })}
                   className={`w-full pl-10 pr-3 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
@@ -199,36 +218,26 @@ const Register = () => {
             </div>
           </div>
 
-          {/* Delivery Address */}
+          {/* Delivery Address / Headquarters */}
           <div>
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-              Delivery Address *
+              {selectedRole === 'Customer' ? 'Delivery Address (Hyderabad)' : 'Admin Headquarters Address'}
             </label>
             <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+              <div className="absolute top-3 left-3 flex items-center pointer-events-none text-slate-400">
                 <MapPin className="w-4 h-4" />
               </div>
               <input
                 type="text"
-                placeholder="e.g. Flat 402, Jubilee Hills, Hyderabad"
-                {...register('address', {
-                  required: 'Delivery address is required'
-                })}
-                className={`w-full pl-10 pr-3 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
-                  errors.address
-                    ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/40'
-                    : 'border-slate-200 focus:ring-orange-200 focus:border-orange-500'
-                }`}
+                placeholder={selectedRole === 'Customer' ? 'Flat 402, Lotus Residency, Road No 36, Jubilee Hills' : 'Plot 18, HITEC City, Hyderabad'}
+                {...register('address')}
+                className="w-full pl-10 pr-3 py-2.5 rounded-2xl border border-slate-200 text-xs sm:text-sm transition focus:outline-none focus:ring-2 focus:ring-orange-200 focus:border-orange-500 bg-slate-50/80"
               />
             </div>
-            {errors.address && (
-              <p className="mt-0.5 text-xs text-rose-600 font-medium">{errors.address.message}</p>
-            )}
           </div>
 
-          {/* Password & Confirm Password with Show/Hide on BOTH */}
+          {/* Passwords */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Password */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Password *
@@ -242,9 +251,9 @@ const Register = () => {
                   placeholder="Min 6 chars"
                   {...register('password', {
                     required: 'Password is required',
-                    minLength: { value: 6, message: 'Min 6 characters' }
+                    minLength: { value: 6, message: 'At least 6 characters' }
                   })}
-                  className={`w-full pl-10 pr-10 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
+                  className={`w-full pl-10 pr-9 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
                     errors.password
                       ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/40'
                       : 'border-slate-200 focus:ring-orange-200 focus:border-orange-500'
@@ -253,9 +262,9 @@ const Register = () => {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4 text-orange-600" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
               {errors.password && (
@@ -263,7 +272,6 @@ const Register = () => {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Confirm Password *
@@ -274,12 +282,12 @@ const Register = () => {
                 </div>
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
-                  placeholder="Repeat password"
+                  placeholder="Re-enter"
                   {...register('confirmPassword', {
                     required: 'Please confirm password',
                     validate: (val) => val === passwordValue || 'Passwords do not match'
                   })}
-                  className={`w-full pl-10 pr-10 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
+                  className={`w-full pl-10 pr-9 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
                     errors.confirmPassword
                       ? 'border-rose-400 focus:ring-rose-200 bg-rose-50/40'
                       : 'border-slate-200 focus:ring-orange-200 focus:border-orange-500'
@@ -288,9 +296,9 @@ const Register = () => {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
                 >
-                  {showConfirmPassword ? <EyeOff className="w-4 h-4 text-orange-600" /> : <Eye className="w-4 h-4" />}
+                  {showConfirmPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                 </button>
               </div>
               {errors.confirmPassword && (
@@ -300,14 +308,18 @@ const Register = () => {
           </div>
 
           {/* Terms checkbox */}
-          <div className="pt-0.5">
-            <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-slate-600">
+          <div className="pt-1">
+            <label className="flex items-start gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                {...register('agreeTerms', { required: 'You must agree to continue' })}
-                className="w-3.5 h-3.5 rounded text-orange-600 focus:ring-orange-500 border-slate-300"
+                {...register('agreeTerms', {
+                  required: 'You must agree to the Terms of Service'
+                })}
+                className="mt-0.5 w-4 h-4 rounded text-orange-600 focus:ring-orange-400 border-slate-300"
               />
-              <span>I agree to CraveDash terms & privacy policy</span>
+              <span className="text-xs text-slate-600">
+                I agree to the <span className="font-bold text-slate-800">CraveDash Terms & Food Safety Policy</span>.
+              </span>
             </label>
             {errors.agreeTerms && (
               <p className="mt-0.5 text-xs text-rose-600 font-medium">{errors.agreeTerms.message}</p>
@@ -318,34 +330,22 @@ const Register = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full mt-2 py-3.5 px-4 rounded-2xl font-bold text-sm text-white bg-gradient-to-r from-orange-500 via-orange-600 to-rose-600 hover:from-orange-600 hover:to-rose-700 shadow-lg shadow-orange-500/30 transition-all transform active:scale-[0.99] flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70"
+            className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white font-extrabold text-xs sm:text-sm shadow-lg shadow-orange-500/25 hover:shadow-orange-500/40 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-50 mt-2"
           >
-            {isSubmitting ? (
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <>
-                <span>Create Account & Log In</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
+            <span>{isSubmitting ? 'Creating Account...' : `Register as ${selectedRole}`}</span>
+            <ArrowRight className="w-4 h-4" />
           </button>
         </form>
 
-        {/* Back to Login */}
-        <div className="mt-5 pt-4 border-t border-slate-100 text-center">
-          <p className="text-xs sm:text-sm text-slate-500">
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="font-bold text-orange-600 hover:text-orange-700 transition inline-flex items-center gap-1"
-            >
-              Sign In <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </p>
+        {/* Footer Link to Login */}
+        <div className="mt-5 text-center text-xs text-slate-500">
+          Already have an account?{' '}
+          <Link to="/login" className="font-extrabold text-orange-600 hover:underline">
+            Sign In here
+          </Link>
         </div>
 
       </div>
-
     </div>
   );
 };

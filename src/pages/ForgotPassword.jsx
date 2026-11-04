@@ -100,11 +100,11 @@ const ForgotPassword = () => {
             <KeyRound className="w-7 h-7" />
           </div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900">
-            {step === 1 ? 'Reset Admin Password' : 'New Admin Password'}
+            {step === 1 ? 'Reset Password' : 'New Password'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
             {step === 1
-              ? 'Enter your registered Admin email or mobile to recover account'
+              ? 'Enter your registered email or mobile to recover account'
               : `Creating new password for: ${targetAccount}`}
           </p>
         </div>
@@ -120,7 +120,7 @@ const ForgotPassword = () => {
           <form onSubmit={handleSubmitLookup(onLookupSubmit)} className="space-y-4" noValidate>
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-                Admin Email or Mobile
+                Email or Mobile Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">

@@ -2,10 +2,10 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const PublicRoute = ({ children }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, currentUser } = useAuth();
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={currentUser?.role === 'Customer' ? '/customer' : '/dashboard'} replace />;
   }
 
   return children;
