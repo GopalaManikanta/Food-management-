@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children, requiredRole }) => {
 
   useEffect(() => {
     if (isAuthenticated && requiredRole === 'Admin' && currentUser?.role !== 'Admin') {
-      toast.info('Admin access required for Dashboard. Redirected to Customer Portal.');
+      toast.info('Admin access required for this section. Redirected to Customer Portal.');
     }
   }, [isAuthenticated, requiredRole, currentUser]);
 

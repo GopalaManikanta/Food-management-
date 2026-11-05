@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Curated realistic fallback dataset (used if network is blocked or API unavailable)
-const FALLBACK_RESTAURANTS = [
+export const FALLBACK_RESTAURANTS = [
   {
     id: 1,
     name: 'Paradise Royale Biryani',

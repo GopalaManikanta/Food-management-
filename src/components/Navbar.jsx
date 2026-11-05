@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   ShoppingBag,
   Bike,
-  User
+  User,
+  UtensilsCrossed
 } from 'lucide-react';
 
 const Navbar = ({ onSimulateOrder }) => {
@@ -113,6 +114,7 @@ const Navbar = ({ onSimulateOrder }) => {
 
   const isDashboardActive = location.pathname === '/dashboard';
   const isRestaurantsActive = location.pathname.startsWith('/restaurants');
+  const isMenuActive = location.pathname.startsWith('/menu');
   const isCustomerActive = location.pathname === '/customer';
 
   return (
@@ -129,7 +131,7 @@ const Navbar = ({ onSimulateOrder }) => {
               Crave<span className="text-orange-600">Dash</span>
             </h1>
             <span className="hidden sm:block text-[10px] text-orange-600 font-extrabold uppercase tracking-wider -mt-1">
-              {isAdmin ? 'Admin Operations' : 'Food Delivery Portal'}
+              {isAdmin ? 'Admin Operations' : 'Customer Food Hub'}
             </span>
           </div>
         </Link>
@@ -148,7 +150,7 @@ const Navbar = ({ onSimulateOrder }) => {
               }`}
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Admin Dashboard</span>
+              <span>Dashboard</span>
             </Link>
 
             <Link
@@ -161,6 +163,18 @@ const Navbar = ({ onSimulateOrder }) => {
             >
               <Store className="w-3.5 h-3.5" />
               <span>Restaurants</span>
+            </Link>
+
+            <Link
+              to="/menu"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition duration-200 ${
+                isMenuActive
+                  ? 'bg-white text-orange-600 shadow-xs font-black'
+                  : 'hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <UtensilsCrossed className="w-3.5 h-3.5" />
+              <span>Menu Management</span>
             </Link>
           </>
         ) : (
@@ -175,6 +189,18 @@ const Navbar = ({ onSimulateOrder }) => {
             >
               <Store className="w-3.5 h-3.5" />
               <span>Explore Restaurants</span>
+            </Link>
+
+            <Link
+              to="/menu"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition duration-200 ${
+                isMenuActive
+                  ? 'bg-white text-orange-600 shadow-xs font-black'
+                  : 'hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <UtensilsCrossed className="w-3.5 h-3.5" />
+              <span>Food Menu</span>
             </Link>
 
             <Link
@@ -337,6 +363,17 @@ const Navbar = ({ onSimulateOrder }) => {
                   <Store className="w-4 h-4 text-orange-600" />
                   <span>Restaurants</span>
                 </Link>
+
+                <Link
+                  to="/menu"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                    isMenuActive ? 'bg-orange-50 text-orange-600 font-black' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <UtensilsCrossed className="w-4 h-4 text-orange-600" />
+                  <span>Menu Management</span>
+                </Link>
               </>
             ) : (
               <>
@@ -349,6 +386,17 @@ const Navbar = ({ onSimulateOrder }) => {
                 >
                   <Store className="w-4 h-4 text-orange-600" />
                   <span>Explore Restaurants</span>
+                </Link>
+
+                <Link
+                  to="/menu"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                    isMenuActive ? 'bg-orange-50 text-orange-600 font-black' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <UtensilsCrossed className="w-4 h-4 text-orange-600" />
+                  <span>Food Menu</span>
                 </Link>
 
                 <Link

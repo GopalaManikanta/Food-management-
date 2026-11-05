@@ -188,19 +188,26 @@ const CustomerPortal = () => {
 
             <div className="flex flex-wrap items-center gap-3">
               <Link
-                to="/restaurants"
+                to="/menu"
                 className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-white text-orange-600 font-extrabold text-xs shadow-lg hover:bg-orange-50 transition active:scale-95"
               >
+                <UtensilsCrossed className="w-4 h-4" />
+                <span>Browse Food Menu</span>
+              </Link>
+              <Link
+                to="/restaurants"
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-white/20 border border-white/25 text-white font-extrabold text-xs hover:bg-white/30 transition active:scale-95"
+              >
                 <Store className="w-4 h-4" />
-                <span>Explore Restaurants</span>
+                <span>Restaurants</span>
               </Link>
               <button
                 type="button"
                 onClick={() => setIsCartOpen(true)}
-                className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-orange-950/40 border border-white/20 text-white font-extrabold text-xs shadow-lg hover:bg-orange-950/60 transition active:scale-95"
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-2xl bg-orange-950/40 border border-white/20 text-white font-extrabold text-xs shadow-lg hover:bg-orange-950/60 transition active:scale-95"
               >
                 <ShoppingBag className="w-4 h-4 text-amber-300" />
-                <span>View Food Basket</span>
+                <span>Basket</span>
               </button>
             </div>
           </div>

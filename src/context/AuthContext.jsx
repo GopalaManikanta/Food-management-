@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
 
 const AuthContext = createContext();
 
@@ -234,6 +235,24 @@ export const AuthProvider = ({ children }) => {
     };
   };
 
+  // Quick Role Switcher (Admin <-> Customer)
+  const switchRole = (targetRole) => {
+    if (!currentUser) return;
+    const nextRole = targetRole || (currentUser.role === 'Admin' ? 'Customer' : 'Admin');
+    const demoUser = DEFAULT_USERS.find((u) => u.role === nextRole) || DEFAULT_USERS[0];
+    
+    const updated = {
+      ...currentUser,
+      role: nextRole,
+      name: demoUser.name,
+      email: demoUser.email,
+      avatar: demoUser.avatar
+    };
+    setCurrentUser(updated);
+    toast.info(`Switched to ${nextRole} View! 🔄`);
+    return updated;
+  };
+
   // Logout Handler
   const logout = () => {
     setCurrentUser(null);
@@ -252,6 +271,7 @@ export const AuthProvider = ({ children }) => {
         login,
         register,
         forgotPassword,
+        switchRole,
         logout
       }}
     >

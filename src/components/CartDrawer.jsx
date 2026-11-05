@@ -169,6 +169,11 @@ const CartDrawer = () => {
                       </span>
                       <div className="min-w-0">
                         <p className="text-xs font-bold text-slate-900 truncate">{item.name}</p>
+                        {item.restaurantName && (
+                          <span className="text-[10px] font-bold text-orange-600 truncate block">
+                            {item.restaurantName}
+                          </span>
+                        )}
                         <p className="text-xs font-extrabold text-slate-700">₹{item.price}</p>
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { RestaurantProvider } from './context/RestaurantContext';
+import { MenuProvider } from './context/MenuContext';
 import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
@@ -12,6 +13,8 @@ import Dashboard from './pages/Dashboard';
 import CustomerPortal from './pages/CustomerPortal';
 import RestaurantList from './pages/RestaurantList';
 import RestaurantDetails from './pages/RestaurantDetails';
+import MenuManagement from './pages/MenuManagement';
+import FoodDetails from './pages/FoodDetails';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -31,93 +34,113 @@ function App() {
   return (
     <AuthProvider>
       <RestaurantProvider>
-        <CartProvider>
-          <Router>
-            <Routes>
-              {/* Public Routes (Accessible only when logged out) */}
-              <Route
-                path="/login"
-                element={
-                  <PublicRoute>
-                    <Login />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/register"
-                element={
-                  <PublicRoute>
-                    <Register />
-                  </PublicRoute>
-                }
-              />
-              <Route
-                path="/forgot-password"
-                element={
-                  <PublicRoute>
-                    <ForgotPassword />
-                  </PublicRoute>
-                }
-              />
+        <MenuProvider>
+          <CartProvider>
+            <Router>
+              <Routes>
+                {/* Public Routes (Accessible only when logged out) */}
+                <Route
+                  path="/login"
+                  element={
+                    <PublicRoute>
+                      <Login />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/register"
+                  element={
+                    <PublicRoute>
+                      <Register />
+                    </PublicRoute>
+                  }
+                />
+                <Route
+                  path="/forgot-password"
+                  element={
+                    <PublicRoute>
+                      <ForgotPassword />
+                    </PublicRoute>
+                  }
+                />
 
-              {/* Admin-Only Dashboard */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute requiredRole="Admin">
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Admin-Only Dashboard */}
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute requiredRole="Admin">
+                      <Dashboard />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Customer Portal (Live Tracking, Order History, Addresses) */}
-              <Route
-                path="/customer"
-                element={
-                  <ProtectedRoute>
-                    <CustomerPortal />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Shared Menu Catalog & Food Ordering (For both Admin & Customer) */}
+                <Route
+                  path="/menu"
+                  element={
+                    <ProtectedRoute>
+                      <MenuManagement />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/menu/:id"
+                  element={
+                    <ProtectedRoute>
+                      <FoodDetails />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Shared Catalog & Details (For both Admin & Customer) */}
-              <Route
-                path="/restaurants"
-                element={
-                  <ProtectedRoute>
-                    <RestaurantList />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/restaurants/:id"
-                element={
-                  <ProtectedRoute>
-                    <RestaurantDetails />
-                  </ProtectedRoute>
-                }
-              />
+                {/* Customer Portal (Live Tracking, Order History, Addresses) */}
+                <Route
+                  path="/customer"
+                  element={
+                    <ProtectedRoute>
+                      <CustomerPortal />
+                    </ProtectedRoute>
+                  }
+                />
 
-              {/* Root and Fallback redirects dynamically based on active role */}
-              <Route path="/" element={<RootRedirect />} />
-              <Route path="*" element={<RootRedirect />} />
-            </Routes>
+                {/* Shared Restaurant Catalog & Details (For both Admin & Customer) */}
+                <Route
+                  path="/restaurants"
+                  element={
+                    <ProtectedRoute>
+                      <RestaurantList />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/restaurants/:id"
+                  element={
+                    <ProtectedRoute>
+                      <RestaurantDetails />
+                    </ProtectedRoute>
+                  }
+                />
 
-            {/* Global Real-Time Toast Notifications */}
-            <ToastContainer
-              position="top-right"
-              autoClose={3000}
-              hideProgressBar={false}
-              newestOnTop
-              closeOnClick
-              rtl={false}
-              pauseOnFocusLoss
-              draggable
-              pauseOnHover
-              theme="light"
-            />
-          </Router>
-        </CartProvider>
+                {/* Root and Fallback redirects dynamically based on active role */}
+                <Route path="/" element={<RootRedirect />} />
+                <Route path="*" element={<RootRedirect />} />
+              </Routes>
+
+              {/* Global Real-Time Toast Notifications */}
+              <ToastContainer
+                position="top-right"
+                autoClose={3000}
+                hideProgressBar={false}
+                newestOnTop
+                closeOnClick
+                rtl={false}
+                pauseOnFocusLoss
+                draggable
+                pauseOnHover
+                theme="light"
+              />
+            </Router>
+          </CartProvider>
+        </MenuProvider>
       </RestaurantProvider>
     </AuthProvider>
   );

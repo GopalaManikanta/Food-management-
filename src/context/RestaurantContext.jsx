@@ -2,7 +2,8 @@ import { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import {
   fetchRestaurants,
   toggleRestaurantStatus,
-  addNewRestaurantPartner
+  addNewRestaurantPartner,
+  FALLBACK_RESTAURANTS
 } from '../services/restaurantApi';
 import { toast } from 'react-toastify';
 
@@ -126,7 +127,18 @@ const DEFAULT_REVIEWS = [
 
 export const RestaurantProvider = ({ children }) => {
   // 1. Core Data States
-  const [restaurants, setRestaurants] = useState([]);
+  const [restaurants, setRestaurants] = useState(() => {
+    try {
+      const stored = localStorage.getItem('food_delivery_restaurants');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return FALLBACK_RESTAURANTS;
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState(null);
 
@@ -184,6 +196,18 @@ export const RestaurantProvider = ({ children }) => {
   useEffect(() => {
     loadRestaurantData();
   }, []);
+
+  useEffect(() => {
+    try {
+      if (restaurants && restaurants.length > 0) {
+        localStorage.setItem('food_delivery_restaurants', JSON.stringify(restaurants));
+        localStorage.setItem('food_delivery_restaurant_count', restaurants.length.toString());
+        window.dispatchEvent(new Event('food_delivery_restaurants_updated'));
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [restaurants]);
 
   // Filter and Sort Logic (Memoized)
   const filteredAndSortedRestaurants = useMemo(() => {

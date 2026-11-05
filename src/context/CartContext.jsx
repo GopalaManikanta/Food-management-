@@ -49,30 +49,13 @@ export const CartProvider = ({ children }) => {
     }
   }, [cartItems, activeRestaurant]);
 
-  // Add Dish to Cart
+  // Add Dish to Cart (Supports seamless multi-item and multi-restaurant ordering without popups)
   const addToCart = (dish, restaurant) => {
     if (!dish) return;
 
-    // Check if adding from another restaurant
-    if (activeRestaurant && restaurant && activeRestaurant.id !== restaurant.id && cartItems.length > 0) {
-      const confirmReset = window.confirm(
-        `Your cart contains items from "${activeRestaurant.name}". Reset your cart to add items from "${restaurant.name}"?`
-      );
-      if (!confirmReset) return;
-      // Reset cart for new restaurant
-      setCartItems([{
-        id: dish.id,
-        name: dish.name,
-        price: dish.price,
-        isVeg: dish.isVeg,
-        image: dish.image,
-        qty: 1
-      }]);
-      setActiveRestaurant(restaurant);
-      toast.info(`Cart reset! Added "${dish.name}" from ${restaurant.name}`);
-      return;
-    }
+    const restName = restaurant?.name || dish.restaurantName || activeRestaurant?.name || 'Partner Kitchen';
 
+    // Set or update active restaurant smoothly
     if (restaurant && (!activeRestaurant || activeRestaurant.id !== restaurant.id)) {
       setActiveRestaurant(restaurant);
     }
@@ -90,14 +73,15 @@ export const CartProvider = ({ children }) => {
           id: dish.id,
           name: dish.name,
           price: dish.price,
-          isVeg: dish.isVeg,
+          isVeg: dish.isVeg !== undefined ? dish.isVeg : true,
           image: dish.image,
+          restaurantName: restName,
           qty: 1
         }
       ];
     });
 
-    toast.success(`Added "${dish.name}" to cart! 🛒`, { autoClose: 1500 });
+    toast.success(`Added "${dish.name}" to basket! 🛒`, { autoClose: 1500 });
   };
 
   // Remove Dish completely
@@ -131,35 +115,34 @@ export const CartProvider = ({ children }) => {
     });
   };
 
-  // Clear Cart
-  const clearCart = () => {
-    setCartItems([]);
-    setActiveRestaurant(null);
-  };
-
-  // Get specific dish qty currently in cart
+  // Get item quantity in cart
   const getItemQuantity = (dishId) => {
     const item = cartItems.find((i) => i.id === dishId);
     return item ? item.qty : 0;
   };
 
-  // Computations
+  // Clear entire cart
+  const clearCart = () => {
+    setCartItems([]);
+    setActiveRestaurant(null);
+  };
+
+  // Derived Financial Calculations
   const itemCount = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.qty, 0);
+    return cartItems.reduce((total, item) => total + item.qty, 0);
   }, [cartItems]);
 
   const subtotal = useMemo(() => {
     return cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   }, [cartItems]);
 
-  // Delivery Charges: from restaurant or fallback to ₹40
   const deliveryFee = useMemo(() => {
     if (cartItems.length === 0) return 0;
-    if (activeRestaurant?.deliveryCharges === 'Free' || activeRestaurant?.deliveryCharges === 0) {
+    if (activeRestaurant?.deliveryCharges === 'Free' || subtotal >= 499) {
       return 0;
     }
     return 35;
-  }, [cartItems, activeRestaurant]);
+  }, [cartItems, activeRestaurant, subtotal]);
 
   const platformFee = cartItems.length > 0 ? 5 : 0;
   const gstTax = useMemo(() => Math.round(subtotal * 0.05), [subtotal]);
@@ -174,19 +157,25 @@ export const CartProvider = ({ children }) => {
 
     const orderId = `CRV-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const restaurantNames = [...new Set(cartItems.map((i) => i.restaurantName || activeRestaurant?.name || 'Paradise Royale Biryani'))];
+    const displayRestaurantName = restaurantNames.length === 1
+      ? restaurantNames[0]
+      : `${restaurantNames[0]} (+${restaurantNames.length - 1} more)`;
+
     const newOrder = {
       id: orderId,
       customerName: customerName || 'Rahul Sharma',
       customerPhone: customerPhone || '+91 9876543210',
       deliveryAddress: deliveryAddress || 'Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad',
-      restaurantName: activeRestaurant?.name || 'Paradise Royale Biryani',
+      restaurantName: displayRestaurantName,
       restaurantId: activeRestaurant?.id || 'rest-1',
       items: cartItems.map((item) => ({
         id: item.id,
         name: item.name,
         qty: item.qty,
         price: item.price,
-        isVeg: item.isVeg
+        isVeg: item.isVeg,
+        restaurantName: item.restaurantName
       })),
       totalAmount: grandTotal,
       subtotal,
