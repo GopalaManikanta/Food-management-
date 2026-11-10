@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'react-toastify';
 
 const CartContext = createContext();
@@ -10,6 +10,31 @@ export const useCart = () => {
   }
   return context;
 };
+
+// Available coupons dictionary
+export const AVAILABLE_COUPONS = [
+  {
+    code: 'WELCOME50',
+    title: 'Flat ₹50 OFF',
+    description: 'Welcome discount on any order',
+    minSubtotal: 0,
+    calculate: () => 50
+  },
+  {
+    code: 'CRAVE100',
+    title: 'Flat ₹100 OFF',
+    description: 'Special weekend treat on orders above ₹399',
+    minSubtotal: 399,
+    calculate: () => 100
+  },
+  {
+    code: 'FEAST20',
+    title: '20% OFF (up to ₹150)',
+    description: '20% discount on orders above ₹299',
+    minSubtotal: 299,
+    calculate: (subtotal) => Math.min(150, Math.round(subtotal * 0.2))
+  }
+];
 
 export const CartProvider = ({ children }) => {
   // 1. Cart Items from LocalStorage
@@ -32,10 +57,20 @@ export const CartProvider = ({ children }) => {
     }
   });
 
-  // 3. Cart Slide-Over / Modal State
+  // 3. Applied Coupon from LocalStorage
+  const [appliedCoupon, setAppliedCoupon] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cavedash_cart_coupon');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // 4. Cart Slide-Over / Modal State
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Sync to LocalStorage
+  // Sync to LocalStorage on every state update
   useEffect(() => {
     try {
       localStorage.setItem('cavedash_cart_items', JSON.stringify(cartItems));
@@ -44,18 +79,54 @@ export const CartProvider = ({ children }) => {
       } else {
         localStorage.removeItem('cavedash_cart_restaurant');
       }
+
+      if (appliedCoupon) {
+        localStorage.setItem('cavedash_cart_coupon', JSON.stringify(appliedCoupon));
+      } else {
+        localStorage.removeItem('cavedash_cart_coupon');
+      }
     } catch (err) {
       console.error('Cart sync error:', err);
     }
-  }, [cartItems, activeRestaurant]);
+  }, [cartItems, activeRestaurant, appliedCoupon]);
+
+  // Real-time Cross-tab synchronization via storage event
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'cavedash_cart_items') {
+        try {
+          setCartItems(e.newValue ? JSON.parse(e.newValue) : []);
+        } catch {
+          // ignore
+        }
+      }
+      if (e.key === 'cavedash_cart_restaurant') {
+        try {
+          setActiveRestaurant(e.newValue ? JSON.parse(e.newValue) : null);
+        } catch {
+          // ignore
+        }
+      }
+      if (e.key === 'cavedash_cart_coupon') {
+        try {
+          setAppliedCoupon(e.newValue ? JSON.parse(e.newValue) : null);
+        } catch {
+          // ignore
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   // Add Dish to Cart (Supports seamless multi-item and multi-restaurant ordering without popups)
-  const addToCart = (dish, restaurant) => {
+  const addToCart = useCallback((dish, restaurant) => {
     if (!dish) return;
 
     const restName = restaurant?.name || dish.restaurantName || activeRestaurant?.name || 'Partner Kitchen';
 
-    // Set or update active restaurant smoothly
+    // Set active restaurant smoothly
     if (restaurant && (!activeRestaurant || activeRestaurant.id !== restaurant.id)) {
       setActiveRestaurant(restaurant);
     }
@@ -72,7 +143,7 @@ export const CartProvider = ({ children }) => {
         {
           id: dish.id,
           name: dish.name,
-          price: dish.price,
+          price: Number(dish.price) || 0,
           isVeg: dish.isVeg !== undefined ? dish.isVeg : true,
           image: dish.image,
           restaurantName: restName,
@@ -81,22 +152,24 @@ export const CartProvider = ({ children }) => {
       ];
     });
 
-    toast.success(`Added "${dish.name}" to basket! 🛒`, { autoClose: 1500 });
-  };
+    toast.success(`Added "${dish.name}" to basket! 🛒`, { autoClose: 1400 });
+  }, [activeRestaurant]);
 
   // Remove Dish completely
-  const removeFromCart = (dishId) => {
+  const removeFromCart = useCallback((dishId) => {
     setCartItems((prev) => {
       const updated = prev.filter((item) => item.id !== dishId);
       if (updated.length === 0) {
         setActiveRestaurant(null);
+        setAppliedCoupon(null);
       }
       return updated;
     });
-  };
+    toast.info('Item removed from basket', { autoClose: 1200 });
+  }, []);
 
   // Update item quantity (+1 or -1)
-  const updateQuantity = (dishId, delta) => {
+  const updateQuantity = useCallback((dishId, delta) => {
     setCartItems((prev) => {
       const updated = prev
         .map((item) => {
@@ -110,30 +183,36 @@ export const CartProvider = ({ children }) => {
 
       if (updated.length === 0) {
         setActiveRestaurant(null);
+        setAppliedCoupon(null);
       }
       return updated;
     });
-  };
+  }, []);
 
   // Get item quantity in cart
-  const getItemQuantity = (dishId) => {
+  const getItemQuantity = useCallback((dishId) => {
     const item = cartItems.find((i) => i.id === dishId);
     return item ? item.qty : 0;
-  };
+  }, [cartItems]);
 
   // Clear entire cart
-  const clearCart = () => {
+  const clearCart = useCallback(() => {
     setCartItems([]);
     setActiveRestaurant(null);
-  };
+    setAppliedCoupon(null);
+    localStorage.removeItem('cavedash_cart_items');
+    localStorage.removeItem('cavedash_cart_restaurant');
+    localStorage.removeItem('cavedash_cart_coupon');
+    toast.info('Basket cleared! 🗑️', { autoClose: 1500 });
+  }, []);
 
-  // Derived Financial Calculations
+  // Financial Calculations
   const itemCount = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.qty, 0);
   }, [cartItems]);
 
   const subtotal = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
+    return cartItems.reduce((sum, item) => sum + (Number(item.price) || 0) * item.qty, 0);
   }, [cartItems]);
 
   const deliveryFee = useMemo(() => {
@@ -146,10 +225,56 @@ export const CartProvider = ({ children }) => {
 
   const platformFee = cartItems.length > 0 ? 5 : 0;
   const gstTax = useMemo(() => Math.round(subtotal * 0.05), [subtotal]);
-  const grandTotal = subtotal + deliveryFee + platformFee + gstTax;
+
+  // Calculate Coupon Discount
+  const couponDiscount = useMemo(() => {
+    if (!appliedCoupon || cartItems.length === 0) return 0;
+    const match = AVAILABLE_COUPONS.find((c) => c.code === appliedCoupon.code);
+    if (!match) return 0;
+    if (subtotal < match.minSubtotal) return 0;
+    return match.calculate(subtotal);
+  }, [appliedCoupon, subtotal, cartItems.length]);
+
+  const grandTotal = useMemo(() => {
+    const total = subtotal + deliveryFee + platformFee + gstTax - couponDiscount;
+    return Math.max(0, total);
+  }, [subtotal, deliveryFee, platformFee, gstTax, couponDiscount]);
+
+  // Apply Coupon Handler
+  const applyCoupon = useCallback((code) => {
+    const cleanCode = code?.trim().toUpperCase();
+    const coupon = AVAILABLE_COUPONS.find((c) => c.code === cleanCode);
+
+    if (!coupon) {
+      toast.error('Invalid coupon code. Try WELCOME50 or CRAVE100');
+      return { success: false, message: 'Invalid coupon code' };
+    }
+
+    if (subtotal < coupon.minSubtotal) {
+      const needed = coupon.minSubtotal - subtotal;
+      toast.warning(`Add ₹${needed} more to apply coupon ${cleanCode}!`);
+      return { success: false, message: `Minimum order value ₹${coupon.minSubtotal}` };
+    }
+
+    const discountVal = coupon.calculate(subtotal);
+    setAppliedCoupon({
+      code: coupon.code,
+      title: coupon.title,
+      discount: discountVal
+    });
+    toast.success(`🎉 Coupon ${coupon.code} applied! Saved ₹${discountVal}!`);
+    return { success: true, discount: discountVal };
+  }, [subtotal]);
+
+  // Remove Coupon Handler
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    localStorage.removeItem('cavedash_cart_coupon');
+    toast.info('Coupon removed');
+  }, []);
 
   // Place Order Handler (Saves directly to food_delivery_orders)
-  const placeOrder = ({ customerName, customerPhone, deliveryAddress, paymentMethod = 'UPI' }) => {
+  const placeOrder = useCallback(({ customerName, customerPhone, deliveryAddress, paymentMethod = 'UPI' }) => {
     if (cartItems.length === 0) {
       toast.error('Your cart is empty!');
       return { success: false, message: 'Cart is empty' };
@@ -182,6 +307,8 @@ export const CartProvider = ({ children }) => {
       deliveryFee,
       platformFee,
       gstTax,
+      couponCode: appliedCoupon?.code || null,
+      couponDiscount,
       status: 'Preparing',
       paymentMethod,
       createdAt: 'Just now',
@@ -194,7 +321,7 @@ export const CartProvider = ({ children }) => {
       const updated = [newOrder, ...(Array.isArray(existing) ? existing : [])];
       localStorage.setItem('food_delivery_orders', JSON.stringify(updated));
 
-      // Trigger cross-component real-time sync event
+      // Trigger cross-component and cross-tab real-time sync event
       window.dispatchEvent(new Event('food_delivery_order_placed'));
     } catch (e) {
       console.error('Failed to save order to localStorage:', e);
@@ -206,7 +333,7 @@ export const CartProvider = ({ children }) => {
 
     toast.success(`🎉 Order #${orderId} Placed Successfully! Preparing in kitchen.`);
     return { success: true, order: newOrder };
-  };
+  }, [cartItems, activeRestaurant, grandTotal, subtotal, deliveryFee, platformFee, gstTax, appliedCoupon, couponDiscount, clearCart]);
 
   return (
     <CartContext.Provider
@@ -226,6 +353,11 @@ export const CartProvider = ({ children }) => {
         platformFee,
         gstTax,
         grandTotal,
+        appliedCoupon,
+        couponDiscount,
+        applyCoupon,
+        removeCoupon,
+        availableCoupons: AVAILABLE_COUPONS,
         placeOrder
       }}
     >

@@ -37,14 +37,12 @@ const ForgotPassword = () => {
   const {
     register: registerReset,
     handleSubmit: handleSubmitReset,
-    watch: watchReset,
-    formState: { errors: errorsReset, isSubmitting: isSubmittingReset }
+        formState: { errors: errorsReset, isSubmitting: isSubmittingReset }
   } = useForm({
     defaultValues: { newPassword: '', confirmPassword: '' }
   });
 
-  const newPasswordValue = watchReset('newPassword');
-
+  
   // Verify Account
   const onLookupSubmit = (data) => {
     const cleanId = (data.identifier || '').trim().toLowerCase();
@@ -212,7 +210,7 @@ const ForgotPassword = () => {
                   placeholder="Repeat new password"
                   {...registerReset('confirmPassword', {
                     required: 'Please confirm password',
-                    validate: (val) => val === newPasswordValue || 'Passwords do not match'
+                    validate: (val, formValues) => val === formValues.newPassword || 'Passwords do not match'
                   })}
                   className={`w-full pl-10 pr-11 py-3 rounded-2xl border text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
                     errorsReset.confirmPassword

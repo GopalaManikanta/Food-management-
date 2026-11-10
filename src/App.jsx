@@ -5,6 +5,7 @@ import { MenuProvider } from './context/MenuContext';
 import { CartProvider } from './context/CartContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import PublicRoute from './components/PublicRoute';
+import CartDrawer from './components/CartDrawer';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -124,6 +125,9 @@ function App() {
                 <Route path="/" element={<RootRedirect />} />
                 <Route path="*" element={<RootRedirect />} />
               </Routes>
+
+              {/* Global Real-Time Cart Drawer accessible across all pages */}
+              <CartDrawer />
 
               {/* Global Real-Time Toast Notifications */}
               <ToastContainer

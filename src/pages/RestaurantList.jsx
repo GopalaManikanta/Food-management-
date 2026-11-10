@@ -1,5 +1,4 @@
 import Navbar from '../components/Navbar';
-import CartDrawer from '../components/CartDrawer';
 import { useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useCart } from '../context/CartContext';
@@ -612,8 +611,7 @@ const RestaurantList = () => {
       )}
 
       {/* SLIDE-OVER CART DRAWER */}
-      <CartDrawer />
-
+      
     </div>
   );
 };

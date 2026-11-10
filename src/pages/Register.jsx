@@ -26,8 +26,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
-    watch,
-    formState: { errors, isSubmitting }
+        formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
       name: '',
@@ -40,8 +39,7 @@ const Register = () => {
     }
   });
 
-  const passwordValue = watch('password');
-
+  
   const onSubmit = (data) => {
     const res = registerAuth({
       name: data.name,
@@ -285,7 +283,7 @@ const Register = () => {
                   placeholder="Re-enter"
                   {...register('confirmPassword', {
                     required: 'Please confirm password',
-                    validate: (val) => val === passwordValue || 'Passwords do not match'
+                    validate: (val, formValues) => val === formValues.password || 'Passwords do not match'
                   })}
                   className={`w-full pl-10 pr-9 py-2.5 rounded-2xl border text-xs sm:text-sm transition focus:outline-none focus:ring-2 bg-slate-50/80 ${
                     errors.confirmPassword

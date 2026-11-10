@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
-import CartDrawer from '../components/CartDrawer';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useMenu } from '../context/MenuContext';
 import { useAuth } from '../context/AuthContext';
@@ -254,8 +253,8 @@ const FoodDetails = () => {
                 </p>
               </div>
 
-              {/* Customer Ordering Section */}
-              {!isAdmin && (
+              {/* Ordering Section (Customer & Admin) */}
+                  {(
                 <div className="pt-3">
                   {item.isAvailable === false ? (
                     <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center">
@@ -367,7 +366,7 @@ const FoodDetails = () => {
       </main>
 
       {/* 3. FLOATING BOTTOM BASKET BAR (FOR CUSTOMER) */}
-      {!isAdmin && itemCount > 0 && (
+      {itemCount > 0 && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:w-96 z-30 animate-slideUp select-none">
           <div className="bg-slate-900 text-white p-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between border border-white/10">
             <div className="flex items-center gap-3">
@@ -393,8 +392,7 @@ const FoodDetails = () => {
       )}
 
       {/* 4. SLIDE-OVER CART DRAWER */}
-      <CartDrawer />
-
+      
       {/* 5. MODAL: EDIT FOOD ITEM (ADMIN) */}
       {isAdmin && isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn select-none">

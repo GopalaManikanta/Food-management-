@@ -194,7 +194,32 @@ export const RestaurantProvider = ({ children }) => {
   };
 
   useEffect(() => {
-    loadRestaurantData();
+    let ignore = false;
+    async function init() {
+      try {
+        const data = await fetchRestaurants();
+        if (ignore) return;
+        const enriched = data.map((r) => ({
+          ...r,
+          menu: r.menu && r.menu.length > 0 ? r.menu : generateDefaultMenu(r.cuisine),
+          reviews: r.reviews && r.reviews.length > 0 ? r.reviews : DEFAULT_REVIEWS,
+          timing: r.timing || '11:00 AM - 11:30 PM (Mon - Sun)',
+          fssai: r.fssai || '13621014000452',
+          phone: r.phone || '+91 98490 87654',
+          manager: r.manager || 'Vikram Oberoi',
+          commission: r.commission || '15%'
+        }));
+        setRestaurants(enriched);
+      } catch (err) {
+        if (ignore) return;
+        console.error('Failed to load restaurants:', err);
+        setErrorMessage('Could not load restaurant partners. Please check your connection and retry.');
+      } finally {
+        if (!ignore) setIsLoading(false);
+      }
+    }
+    init();
+    return () => { ignore = true; };
   }, []);
 
   useEffect(() => {
@@ -266,10 +291,12 @@ export const RestaurantProvider = ({ children }) => {
     return result;
   }, [restaurants, searchQuery, selectedCuisine, minRating, sortBy, statusFilter]);
 
-  // Reset to page 1 whenever filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCuisine, minRating, sortBy, statusFilter]);
+  // Wrappers to update filters and reset page to 1
+  const updateSearchQuery = (val) => { setSearchQuery(val); setCurrentPage(1); };
+  const updateSelectedCuisine = (val) => { setSelectedCuisine(val); setCurrentPage(1); };
+  const updateMinRating = (val) => { setMinRating(val); setCurrentPage(1); };
+  const updateSortBy = (val) => { setSortBy(val); setCurrentPage(1); };
+  const updateStatusFilter = (val) => { setStatusFilter(val); setCurrentPage(1); };
 
   // Pagination calculation
   const totalPages = Math.ceil(filteredAndSortedRestaurants.length / ITEMS_PER_PAGE) || 1;
@@ -367,15 +394,15 @@ export const RestaurantProvider = ({ children }) => {
         isLoading,
         errorMessage,
         searchQuery,
-        setSearchQuery,
+        setSearchQuery: updateSearchQuery,
         selectedCuisine,
-        setSelectedCuisine,
+        setSelectedCuisine: updateSelectedCuisine,
         minRating,
-        setMinRating,
+        setMinRating: updateMinRating,
         sortBy,
-        setSortBy,
+        setSortBy: updateSortBy,
         statusFilter,
-        setStatusFilter,
+        setStatusFilter: updateStatusFilter,
         currentPage,
         setCurrentPage,
         totalPages,

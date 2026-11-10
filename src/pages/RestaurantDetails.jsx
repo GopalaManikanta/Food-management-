@@ -3,7 +3,6 @@ import { useState, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useCart } from '../context/CartContext';
-import CartDrawer from '../components/CartDrawer';
 import {
   ArrowLeft,
   Star,
@@ -853,8 +852,7 @@ const RestaurantDetails = () => {
       )}
 
       {/* SLIDE-OVER CART DRAWER */}
-      <CartDrawer />
-
+      
     </div>
   );
 };
