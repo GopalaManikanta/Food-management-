@@ -228,21 +228,23 @@ const Navbar = ({ onSimulateOrder }) => {
           <span>{currentDateTime}</span>
         </div>
 
-        {/* Customer Cart Basket Button */}
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-black transition cursor-pointer active:scale-95"
-          title="Open Cart Basket"
-        >
-          <ShoppingBag className="w-4 h-4 text-orange-600" />
-          <span>Basket</span>
-          {itemCount > 0 && (
-            <span className="px-1.5 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-black animate-scaleIn">
-              {itemCount}
-            </span>
-          )}
-        </button>
+        {/* Customer Cart Basket Button (Only shown for Customers, hidden for Admin) */}
+        {!isAdmin && (
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 border border-orange-200 text-xs font-black transition cursor-pointer active:scale-95"
+            title="Open Cart Basket"
+          >
+            <ShoppingBag className="w-4 h-4 text-orange-600" />
+            <span>Basket</span>
+            {itemCount > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-orange-600 text-white text-[10px] font-black animate-scaleIn">
+                {itemCount}
+              </span>
+            )}
+          </button>
+        )}
 
         {/* Admin Quick Mock Order Simulator Button */}
         {isAdmin && (
@@ -295,19 +297,21 @@ const Navbar = ({ onSimulateOrder }) => {
 
       {/* 4. MOBILE HAMBURGER BUTTON */}
       <div className="flex items-center gap-2 lg:hidden">
-        {/* Mobile Cart Button */}
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="relative p-2 rounded-xl bg-orange-50 text-orange-600 border border-orange-200"
-        >
-          <ShoppingBag className="w-5 h-5" />
-          {itemCount > 0 && (
-            <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-orange-600 text-white text-[9px] font-black">
-              {itemCount}
-            </span>
-          )}
-        </button>
+        {/* Mobile Cart Button (Only for Customers) */}
+        {!isAdmin && (
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            className="relative p-2 rounded-xl bg-orange-50 text-orange-600 border border-orange-200"
+          >
+            <ShoppingBag className="w-5 h-5" />
+            {itemCount > 0 && (
+              <span className="absolute -top-1 -right-1 px-1.5 py-0.2 rounded-full bg-orange-600 text-white text-[9px] font-black">
+                {itemCount}
+              </span>
+            )}
+          </button>
+        )}
 
         <button
           type="button"

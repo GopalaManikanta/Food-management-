@@ -26,7 +26,7 @@ const Register = () => {
   const {
     register,
     handleSubmit,
-        formState: { errors, isSubmitting }
+    formState: { errors, isSubmitting }
   } = useForm({
     defaultValues: {
       name: '',

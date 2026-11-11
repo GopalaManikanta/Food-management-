@@ -2,6 +2,7 @@ import Navbar from '../components/Navbar';
 import { useNavigate } from 'react-router-dom';
 import { useRestaurant } from '../context/RestaurantContext';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 import {
   Store,
   Search,
@@ -22,6 +23,8 @@ import {
 
 const RestaurantList = () => {
   const navigate = useNavigate();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'Admin';
   const { itemCount, subtotal, setIsCartOpen } = useCart();
 
   // Consume from RestaurantContext
@@ -585,7 +588,7 @@ const RestaurantList = () => {
       )}
 
       {/* FLOATING BOTTOM BASKET BAR */}
-      {itemCount > 0 && (
+      {!isAdmin && itemCount > 0 && (
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-8 sm:w-96 z-30 animate-slideUp select-none">
           <div className="bg-slate-900 text-white p-3.5 px-5 rounded-2xl shadow-2xl flex items-center justify-between border border-white/10">
             <div className="flex items-center gap-3">
@@ -610,7 +613,7 @@ const RestaurantList = () => {
         </div>
       )}
 
-      {/* SLIDE-OVER CART DRAWER */}
+
       
     </div>
   );

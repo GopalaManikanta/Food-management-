@@ -9,9 +9,6 @@ import {
   Plus,
   Minus,
   MapPin,
-  CreditCard,
-  Banknote,
-  QrCode,
   ArrowRight,
   ShieldCheck,
   Tag,
@@ -38,24 +35,15 @@ const CartDrawer = () => {
     couponDiscount,
     applyCoupon,
     removeCoupon,
-    availableCoupons,
-    placeOrder
+    availableCoupons
   } = useCart();
 
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
-  // Delivery Address
-  const [deliveryAddress, setDeliveryAddress] = useState(
-    currentUser?.address || 'Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad'
-  );
-
-  // Payment Mode
-  const [paymentMethod, setPaymentMethod] = useState('UPI'); // 'UPI' | 'COD' | 'CARD'
   const [couponInput, setCouponInput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (!isCartOpen) return null;
+  if (!isCartOpen || currentUser?.role === 'Admin') return null;
 
   const handleApplyCoupon = (codeToApply) => {
     const code = codeToApply || couponInput;
@@ -66,24 +54,9 @@ const CartDrawer = () => {
     }
   };
 
-  const handleCheckout = () => {
-    setIsSubmitting(true);
-    setTimeout(() => {
-      const res = placeOrder({
-        customerName: currentUser?.name || (currentUser?.role === 'Admin' ? 'Admin Manager' : 'Rahul Sharma'),
-        customerPhone: currentUser?.phone || '+91 9876543210',
-        deliveryAddress,
-        paymentMethod
-      });
-      setIsSubmitting(false);
-      if (res.success) {
-        if (currentUser?.role === 'Admin') {
-          navigate('/dashboard');
-        } else {
-          navigate('/customer');
-        }
-      }
-    }, 600);
+  const handleProceedToCheckout = () => {
+    setIsCartOpen(false);
+    navigate('/checkout');
   };
 
   const freeDeliveryProgress = Math.min(100, Math.round((subtotal / 499) * 100));
@@ -362,64 +335,16 @@ const CartDrawer = () => {
                 )}
               </div>
 
-              {/* Delivery Address */}
-              <div className="space-y-1.5">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+              {/* Delivery Address Preview */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                <span className="text-[11px] font-black text-slate-500 uppercase tracking-wider flex items-center gap-1">
                   <MapPin className="w-3.5 h-3.5 text-orange-600" />
-                  Delivery Address
+                  Delivering to
                 </span>
-                <textarea
-                  rows={2}
-                  value={deliveryAddress}
-                  onChange={(e) => setDeliveryAddress(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-orange-300 transition"
-                  placeholder="Enter delivery address, flat number, landmark..."
-                />
-              </div>
-
-              {/* Payment Mode Selector */}
-              <div className="space-y-1.5">
-                <span className="text-xs font-black text-slate-400 uppercase tracking-wider">Payment Mode</span>
-                <div className="grid grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('UPI')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
-                      paymentMethod === 'UPI'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <QrCode className="w-4 h-4" />
-                    <span>UPI / QR</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('CARD')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
-                      paymentMethod === 'CARD'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    <span>Card</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setPaymentMethod('COD')}
-                    className={`p-2.5 rounded-xl border text-xs font-bold transition flex flex-col items-center gap-1 cursor-pointer ${
-                      paymentMethod === 'COD'
-                        ? 'border-orange-500 bg-orange-50 text-orange-700 shadow-xs'
-                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                    }`}
-                  >
-                    <Banknote className="w-4 h-4" />
-                    <span>Cash on Del.</span>
-                  </button>
-                </div>
+                <p className="text-xs font-bold text-slate-800 line-clamp-1">
+                  {currentUser?.address || 'Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad'}
+                </p>
+                <p className="text-[10px] text-slate-400">You can customize address in checkout page</p>
               </div>
 
               {/* Bill Summary */}
@@ -469,21 +394,20 @@ const CartDrawer = () => {
             </div>
           )}
 
-          {/* 5. Footer Checkout Button */}
+          {/* 5. Footer Proceed to Checkout Button */}
           {cartItems.length > 0 && (
             <div className="p-4 sm:p-5 border-t border-slate-200 bg-white">
               <button
                 type="button"
-                disabled={isSubmitting}
-                onClick={handleCheckout}
-                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-black text-sm transition shadow-lg shadow-orange-600/25 flex items-center justify-between cursor-pointer active:scale-98 disabled:opacity-50"
+                onClick={handleProceedToCheckout}
+                className="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-rose-600 hover:from-orange-700 hover:to-rose-700 text-white font-black text-sm transition shadow-lg shadow-orange-600/25 flex items-center justify-between cursor-pointer active:scale-98"
               >
                 <div className="text-left">
                   <span className="text-[10px] uppercase font-bold text-white/80 block -mb-0.5">Total Amount</span>
                   <span>₹{grandTotal}</span>
                 </div>
                 <div className="flex items-center gap-1.5 font-bold">
-                  <span>{isSubmitting ? 'Placing Order...' : 'Place Order'}</span>
+                  <span>Proceed to Checkout</span>
                   <ArrowRight className="w-4 h-4" />
                 </div>
               </button>

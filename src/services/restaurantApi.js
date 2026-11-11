@@ -265,6 +265,7 @@ export const toggleRestaurantStatus = (restaurantId, currentList) => {
 
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem('food_delivery_restaurants', JSON.stringify(updated));
   } catch (e) {
     console.error('Failed to sync updated restaurant status:', e);
   }
@@ -293,6 +294,7 @@ export const addNewRestaurantPartner = (newPartner, currentList) => {
   const updated = [newRestaurantObj, ...currentList];
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(updated));
+    localStorage.setItem('food_delivery_restaurants', JSON.stringify(updated));
     localStorage.setItem('food_delivery_restaurant_count', updated.length.toString());
   } catch (e) {
     console.error('Failed to sync new restaurant:', e);

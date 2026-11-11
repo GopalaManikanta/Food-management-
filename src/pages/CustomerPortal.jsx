@@ -158,8 +158,7 @@ const CustomerPortal = () => {
       {/* Unified Navbar */}
       <Navbar />
 
-            
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+<main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
         
         {/* CUSTOMER GREETING & HERO BANNER */}
         <div className="relative rounded-3xl bg-gradient-to-r from-orange-600 via-rose-600 to-amber-600 p-6 sm:p-8 text-white overflow-hidden shadow-xl">
@@ -414,6 +413,14 @@ const CustomerPortal = () => {
                             <Phone className="w-3.5 h-3.5 text-emerald-600" />
                             <span>Call Rider</span>
                           </button>
+
+                          <Link
+                            to={`/order-confirmation/${order.id}`}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 text-xs font-bold text-orange-700 transition"
+                          >
+                            <Receipt className="w-3.5 h-3.5 text-orange-600" />
+                            <span>Live Tracker</span>
+                          </Link>
                           
                           {isPreparing && (
                             <button
@@ -617,34 +624,30 @@ const CustomerPortal = () => {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                
-                {/* Home Address */}
-                <div className="p-4 rounded-2xl border-2 border-orange-500 bg-orange-50/30 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-xs text-orange-900 uppercase tracking-wider flex items-center gap-1">
-                      🏠 Home (Primary)
-                    </span>
-                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                {savedAddresses.map((addr, idx) => (
+                  <div
+                    key={addr.id || idx}
+                    className={`p-4 rounded-2xl border-2 space-y-2 transition ${
+                      idx === 0
+                        ? 'border-orange-500 bg-orange-50/30'
+                        : 'border-slate-200 bg-slate-50/70 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1">
+                        <span>{addr.tag === 'Home' ? '🏠' : addr.tag === 'Work' ? '🏢' : '📍'}</span>
+                        <span>{addr.tag} {idx === 0 && '(Primary)'}</span>
+                      </span>
+                      {idx === 0 && <span className="w-2.5 h-2.5 rounded-full bg-orange-500" />}
+                    </div>
+                    <p className="text-xs text-slate-700 leading-relaxed font-semibold">
+                      {addr.fullAddress || addr.flatNo || addr.area}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Receiver: {addr.receiverName || currentUser?.name || 'Customer'} • {addr.receiverPhone || currentUser?.phone || '+91 9876543210'}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-700 leading-relaxed font-semibold">
-                    Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad - 500033
-                  </p>
-                  <p className="text-[11px] text-slate-500">Contact: {currentUser?.phone || '+91 9876543210'}</p>
-                </div>
-
-                {/* Office Address */}
-                <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="font-black text-xs text-slate-700 uppercase tracking-wider flex items-center gap-1">
-                      🏢 Office
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-700 leading-relaxed font-semibold">
-                    Level 6, Mindspace IT Park, Building No. 12, HITEC City, Hyderabad - 500081
-                  </p>
-                  <p className="text-[11px] text-slate-500">Contact: {currentUser?.phone || '+91 9876543210'}</p>
-                </div>
-
+                ))}
               </div>
             </div>
 

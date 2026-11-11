@@ -253,8 +253,8 @@ const FoodDetails = () => {
                 </p>
               </div>
 
-              {/* Ordering Section (Customer & Admin) */}
-                  {(
+              {/* Ordering Section (Only for Customer, hidden for Admin) */}
+              {!isAdmin && (
                 <div className="pt-3">
                   {item.isAvailable === false ? (
                     <div className="p-4 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-bold text-center">
@@ -391,8 +391,6 @@ const FoodDetails = () => {
         </div>
       )}
 
-      {/* 4. SLIDE-OVER CART DRAWER */}
-      
       {/* 5. MODAL: EDIT FOOD ITEM (ADMIN) */}
       {isAdmin && isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn select-none">

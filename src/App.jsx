@@ -16,6 +16,8 @@ import RestaurantList from './pages/RestaurantList';
 import RestaurantDetails from './pages/RestaurantDetails';
 import MenuManagement from './pages/MenuManagement';
 import FoodDetails from './pages/FoodDetails';
+import Checkout from './pages/Checkout';
+import OrderConfirmation from './pages/OrderConfirmation';
 
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -99,6 +101,26 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <CustomerPortal />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Dedicated Swiggy/Zomato Checkout Page */}
+                <Route
+                  path="/checkout"
+                  element={
+                    <ProtectedRoute>
+                      <Checkout />
+                    </ProtectedRoute>
+                  }
+                />
+
+                {/* Real-Time Live Order Confirmation & Live Pipeline Tracking */}
+                <Route
+                  path="/order-confirmation/:orderId"
+                  element={
+                    <ProtectedRoute>
+                      <OrderConfirmation />
                     </ProtectedRoute>
                   }
                 />

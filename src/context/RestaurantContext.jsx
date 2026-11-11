@@ -324,6 +324,17 @@ export const RestaurantProvider = ({ children }) => {
     }
   };
 
+  // Synchronize restaurant updates to LocalStorage safely
+  const syncRestaurantsToStorage = (updatedList) => {
+    try {
+      localStorage.setItem('food_delivery_restaurants_list', JSON.stringify(updatedList));
+      localStorage.setItem('food_delivery_restaurants', JSON.stringify(updatedList));
+      localStorage.setItem('food_delivery_restaurant_count', updatedList.length.toString());
+    } catch (e) {
+      console.error('Failed to sync restaurant storage:', e);
+    }
+  };
+
   // Action: Add New Dish to a specific Restaurant Menu
   const handleAddDishToMenu = (restaurantId, dishData) => {
     const updated = restaurants.map((r) => {
@@ -347,12 +358,56 @@ export const RestaurantProvider = ({ children }) => {
     });
 
     setRestaurants(updated);
-    try {
-      localStorage.setItem('food_delivery_restaurants_list', JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to sync updated menu:', e);
-    }
+    syncRestaurantsToStorage(updated);
     toast.success(`"${dishData.name}" added to menu catalog! 🍲`);
+  };
+
+  // Action: Edit an Existing Dish in a specific Restaurant Menu
+  const handleEditDishInMenu = (restaurantId, updatedDish) => {
+    const updated = restaurants.map((r) => {
+      if (r.id.toString() === restaurantId.toString()) {
+        const updatedMenu = (r.menu || []).map((dish) => {
+          if (dish.id.toString() === updatedDish.id.toString()) {
+            return {
+              ...dish,
+              name: updatedDish.name.trim(),
+              category: updatedDish.category || dish.category,
+              price: parseFloat(updatedDish.price) || dish.price,
+              isVeg: Boolean(updatedDish.isVeg),
+              isBestseller: Boolean(updatedDish.isBestseller),
+              description: updatedDish.description || dish.description,
+              image: updatedDish.image || dish.image,
+              prepTime: updatedDish.prepTime || dish.prepTime
+            };
+          }
+          return dish;
+        });
+        return { ...r, menu: updatedMenu };
+      }
+      return r;
+    });
+
+    setRestaurants(updated);
+    syncRestaurantsToStorage(updated);
+    toast.success(`"${updatedDish.name}" updated successfully! ✏️`);
+  };
+
+  // Action: Delete a Dish from a specific Restaurant Menu
+  const handleDeleteDishFromMenu = (restaurantId, dishId) => {
+    let deletedDishName = 'Dish';
+    const updated = restaurants.map((r) => {
+      if (r.id.toString() === restaurantId.toString()) {
+        const found = (r.menu || []).find((d) => d.id.toString() === dishId.toString());
+        if (found) deletedDishName = found.name;
+        const updatedMenu = (r.menu || []).filter((dish) => dish.id.toString() !== dishId.toString());
+        return { ...r, menu: updatedMenu };
+      }
+      return r;
+    });
+
+    setRestaurants(updated);
+    syncRestaurantsToStorage(updated);
+    toast.success(`"${deletedDishName}" removed from menu! 🗑️`);
   };
 
   // Action: Onboard New Restaurant Partner
@@ -364,6 +419,7 @@ export const RestaurantProvider = ({ children }) => {
     }
     const updated = addNewRestaurantPartner(newPartner, restaurants);
     setRestaurants(updated);
+    syncRestaurantsToStorage(updated);
     setIsOnboardModalOpen(false);
     toast.success(`🎉 "${newPartner.name}" onboarded successfully!`);
     setNewPartner({
@@ -416,6 +472,8 @@ export const RestaurantProvider = ({ children }) => {
         getRestaurantById,
         handleToggleStatus,
         handleAddDishToMenu,
+        handleEditDishInMenu,
+        handleDeleteDishFromMenu,
         handleOnboardSubmit,
         resetFilters,
         cuisines: CUISINES,

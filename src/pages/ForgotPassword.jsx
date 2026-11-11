@@ -37,7 +37,7 @@ const ForgotPassword = () => {
   const {
     register: registerReset,
     handleSubmit: handleSubmitReset,
-        formState: { errors: errorsReset, isSubmitting: isSubmittingReset }
+    formState: { errors: errorsReset, isSubmitting: isSubmittingReset }
   } = useForm({
     defaultValues: { newPassword: '', confirmPassword: '' }
   });

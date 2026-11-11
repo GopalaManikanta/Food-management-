@@ -23,7 +23,7 @@ export const AVAILABLE_COUPONS = [
   {
     code: 'CRAVE100',
     title: 'Flat ₹100 OFF',
-    description: 'Special weekend treat on orders above ₹399',
+    description: 'Special feast treat on orders above ₹399',
     minSubtotal: 399,
     calculate: () => 100
   },
@@ -274,26 +274,40 @@ export const CartProvider = ({ children }) => {
   }, []);
 
   // Place Order Handler (Saves directly to food_delivery_orders)
-  const placeOrder = useCallback(({ customerName, customerPhone, deliveryAddress, paymentMethod = 'UPI' }) => {
+  const placeOrder = useCallback(({
+    customerName,
+    customerPhone,
+    deliveryAddress,
+    deliveryInstructions = '',
+    paymentMethod = 'UPI',
+    estimatedTime = '30-35 mins'
+  }) => {
+    // 1. Prevent Empty Cart Checkout Guard
     if (cartItems.length === 0) {
-      toast.error('Your cart is empty!');
+      toast.error('Cannot place order: Your cart is empty!');
       return { success: false, message: 'Cart is empty' };
     }
 
-    const orderId = `CRV-${Math.floor(1000 + Math.random() * 9000)}`;
+    // 2. Generate Real-time Order ID (CRV-ORD-XXXX)
+    const orderId = `CRV-ORD-${Math.floor(1000 + Math.random() * 9000)}`;
 
     const restaurantNames = [...new Set(cartItems.map((i) => i.restaurantName || activeRestaurant?.name || 'Paradise Royale Biryani'))];
     const displayRestaurantName = restaurantNames.length === 1
       ? restaurantNames[0]
       : `${restaurantNames[0]} (+${restaurantNames.length - 1} more)`;
 
+    const arrivalDate = new Date(Date.now() + 32 * 60 * 1000);
+    const estimatedArrival = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const newOrder = {
       id: orderId,
       customerName: customerName || 'Rahul Sharma',
       customerPhone: customerPhone || '+91 9876543210',
       deliveryAddress: deliveryAddress || 'Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad',
+      deliveryInstructions: deliveryInstructions || 'Leave at door, contactless delivery',
       restaurantName: displayRestaurantName,
       restaurantId: activeRestaurant?.id || 'rest-1',
+      restaurantImage: activeRestaurant?.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=400&q=80',
       items: cartItems.map((item) => ({
         id: item.id,
         name: item.name,
@@ -302,6 +316,7 @@ export const CartProvider = ({ children }) => {
         isVeg: item.isVeg,
         restaurantName: item.restaurantName
       })),
+      itemCount,
       totalAmount: grandTotal,
       subtotal,
       deliveryFee,
@@ -311,6 +326,15 @@ export const CartProvider = ({ children }) => {
       couponDiscount,
       status: 'Preparing',
       paymentMethod,
+      estimatedDeliveryTime: estimatedTime,
+      estimatedArrival,
+      deliveryPartner: {
+        name: 'Suresh Kumar',
+        phone: '+91 98765 43210',
+        vehicle: 'Hero Splendor (TS 09 EZ 4821)',
+        rating: 4.9,
+        status: 'Assigned & Heading to Kitchen'
+      },
       createdAt: 'Just now',
       timestamp: Date.now()
     };
@@ -323,17 +347,18 @@ export const CartProvider = ({ children }) => {
 
       // Trigger cross-component and cross-tab real-time sync event
       window.dispatchEvent(new Event('food_delivery_order_placed'));
+      window.dispatchEvent(new Event('food_delivery_orders_updated'));
     } catch (e) {
       console.error('Failed to save order to localStorage:', e);
     }
 
-    // Reset Cart
+    // Reset Cart and close drawer
     clearCart();
     setIsCartOpen(false);
 
     toast.success(`🎉 Order #${orderId} Placed Successfully! Preparing in kitchen.`);
-    return { success: true, order: newOrder };
-  }, [cartItems, activeRestaurant, grandTotal, subtotal, deliveryFee, platformFee, gstTax, appliedCoupon, couponDiscount, clearCart]);
+    return { success: true, order: newOrder, orderId };
+  }, [cartItems, activeRestaurant, itemCount, grandTotal, subtotal, deliveryFee, platformFee, gstTax, appliedCoupon, couponDiscount, clearCart]);
 
   return (
     <CartContext.Provider

@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import Navbar from '../components/Navbar';
 import { useRestaurant } from '../context/RestaurantContext';
+import { useMenu } from '../context/MenuContext';
 import { FALLBACK_RESTAURANTS } from '../services/restaurantApi';
 import { Link } from 'react-router-dom';
 import {
@@ -27,6 +28,7 @@ import {
 const Dashboard = () => {
   const { currentUser } = useAuth();
   const { restaurants = [], handleToggleStatus, handleOnboardSubmit } = useRestaurant();
+  const { menuItems = [] } = useMenu();
   const displayRestaurants = (restaurants && restaurants.length > 0) ? restaurants : FALLBACK_RESTAURANTS;
 
   // 1. Real-Time Orders List (Starts at ZERO: Empty array [])
@@ -108,9 +110,11 @@ const Dashboard = () => {
       }
     };
     window.addEventListener('food_delivery_order_placed', handleSyncOrders);
+    window.addEventListener('food_delivery_orders_updated', handleSyncOrders);
     window.addEventListener('storage', handleSyncOrders);
     return () => {
       window.removeEventListener('food_delivery_order_placed', handleSyncOrders);
+      window.removeEventListener('food_delivery_orders_updated', handleSyncOrders);
       window.removeEventListener('storage', handleSyncOrders);
     };
   }, []);
@@ -145,7 +149,7 @@ const Dashboard = () => {
       .reduce((sum, o) => sum + o.totalAmount, 0);
 
     const activeRestCount = (restaurants && restaurants.length > 0) ? restaurants.length : (totalRestaurants > 0 ? totalRestaurants : 12);
-    const activeFoodCount = (totalFoodItems > 0) ? totalFoodItems : 16;
+    const activeFoodCount = (menuItems && menuItems.length > 0) ? menuItems.length : (totalFoodItems > 0 ? totalFoodItems : 16);
 
     return {
       totalRestaurants: activeRestCount,
@@ -156,7 +160,7 @@ const Dashboard = () => {
       totalCustomers,
       totalRevenue: totalRevenueCalc
     };
-  }, [orders, totalFoodItems, totalRestaurants, totalCustomers, restaurants]);
+  }, [orders, totalFoodItems, totalRestaurants, totalCustomers, restaurants, menuItems]);
 
   // Filtered Orders for the Table
   const filteredOrders = useMemo(() => {
