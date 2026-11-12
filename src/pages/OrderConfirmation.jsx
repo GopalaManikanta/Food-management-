@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { toast } from 'react-toastify';
@@ -65,6 +65,23 @@ const OrderConfirmation = () => {
       clearInterval(interval);
     };
   }, [orderId]);
+
+  // Real-time live status change toast for customer on Order Confirmation view
+  const prevStatusRef = useRef(order?.status);
+  useEffect(() => {
+    if (order?.status && prevStatusRef.current && prevStatusRef.current !== order.status) {
+      if (order.status === 'Preparing') {
+        toast.info('👨‍🍳 Kitchen has started cooking your food!');
+      } else if (order.status === 'Out for Delivery') {
+        toast.info('🛵 Delivery hero has picked up your food and is on the way!');
+      } else if (order.status === 'Delivered') {
+        toast.success('🎉 Your order was Delivered safely at your doorstep! Enjoy your meal!');
+      } else if (order.status === 'Cancelled') {
+        toast.warn('⚠️ Order was cancelled. 100% refund initiated.');
+      }
+    }
+    prevStatusRef.current = order?.status;
+  }, [order?.status]);
 
   // Real-time ticking countdown timer (starts around 31 mins)
   const [secondsRemaining, setSecondsRemaining] = useState(31 * 60);
@@ -147,16 +164,27 @@ const OrderConfirmation = () => {
             </div>
 
             <div className="flex-1 space-y-1.5">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider text-emerald-100 border border-white/20">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-black uppercase tracking-wider text-white border border-white/20">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Order Placed & Confirmed</span>
+                <span>
+                  {order.status === 'Delivered' ? 'Order Completed & Delivered' :
+                   order.status === 'Cancelled' ? 'Order Cancelled' :
+                   order.status === 'Out for Delivery' ? 'Out for Delivery' :
+                   'Order Placed & Confirmed'}
+                </span>
               </div>
               
               <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-                Thank you, {order.customerName}! 🎉
+                {order.status === 'Delivered' ? `Food Delivered, ${order.customerName}! 🍽️` :
+                 order.status === 'Cancelled' ? `Order #${order.id} Cancelled` :
+                 `Thank you, ${order.customerName}! 🎉`}
               </h1>
               <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
-                Your order from <strong className="text-white font-bold">{order.restaurantName}</strong> has been received by the kitchen and is being prepared with high kitchen hygiene standards.
+                {order.status === 'Delivered'
+                  ? 'Your meal has been safely delivered to your doorstep. Hope you enjoy every bite!'
+                  : order.status === 'Cancelled'
+                  ? 'This order was cancelled. 100% refund has been processed back to your original payment method.'
+                  : `Your order from ${order.restaurantName} has been received by the kitchen and is being prepared with high kitchen hygiene standards.`}
               </p>
 
               {/* Order ID Tag with Copy */}
@@ -198,7 +226,9 @@ const OrderConfirmation = () => {
           <div className="bg-slate-900 text-white px-5 py-3 rounded-2xl flex flex-col items-center sm:items-end shadow-inner">
             <span className="text-[10px] uppercase font-bold text-slate-400">Live ETA Clock</span>
             <span className="text-xl font-black font-mono text-orange-400">
-              {formatCountdown(secondsRemaining)}
+              {order.status === 'Delivered' ? 'Delivered ✅' :
+               order.status === 'Cancelled' ? 'Cancelled ❌' :
+               formatCountdown(secondsRemaining)}
             </span>
           </div>
         </div>

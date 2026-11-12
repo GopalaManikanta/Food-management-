@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -18,7 +18,12 @@ import {
   ChefHat,
   Search,
   Store,
-  User
+  User,
+  X,
+  ShieldCheck,
+  AlertCircle,
+  ExternalLink,
+  MessageSquare
 } from 'lucide-react';
 
 const CustomerPortal = () => {
@@ -34,6 +39,9 @@ const CustomerPortal = () => {
   // Selected Order for Receipt Modal
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState(null);
 
+  // Dedicated Live Order Tracking Modal State (Track by ID)
+  const [trackingOrderId, setTrackingOrderId] = useState(null);
+
   // Orders State (Synced directly with localStorage 'food_delivery_orders')
   const [allOrders, setAllOrders] = useState(() => {
     try {
@@ -43,6 +51,38 @@ const CustomerPortal = () => {
       return [];
     }
   });
+
+  // Current tracking order derived cleanly from allOrders (always in sync, no cascade render)
+  const trackingOrder = useMemo(
+    () => (trackingOrderId ? allOrders.find((o) => o.id === trackingOrderId) || null : null),
+    [allOrders, trackingOrderId]
+  );
+
+  // Real-Time Notification Tracker: Alert customer instantly when Admin changes status
+  const previousOrdersRef = useRef(allOrders);
+  useEffect(() => {
+    if (!previousOrdersRef.current || previousOrdersRef.current.length === 0) {
+      previousOrdersRef.current = allOrders;
+      return;
+    }
+
+    allOrders.forEach((newOrder) => {
+      const prevOrder = previousOrdersRef.current.find((p) => p.id === newOrder.id);
+      if (prevOrder && prevOrder.status !== newOrder.status) {
+        if (newOrder.status === 'Preparing') {
+          toast.info(`👨‍🍳 Kitchen started preparing your order #${newOrder.id} from "${newOrder.restaurantName}"!`);
+        } else if (newOrder.status === 'Out for Delivery') {
+          toast.info(`🛵 Rider is on the way with your order #${newOrder.id} from "${newOrder.restaurantName}"!`);
+        } else if (newOrder.status === 'Delivered') {
+          toast.success(`🎉 Delicious news! Order #${newOrder.id} from "${newOrder.restaurantName}" was Delivered!`);
+        } else if (newOrder.status === 'Cancelled') {
+          toast.warn(`⚠️ Order #${newOrder.id} has been Cancelled. 100% refund initiated.`);
+        }
+      }
+    });
+
+    previousOrdersRef.current = allOrders;
+  }, [allOrders]);
 
   // Sync orders from localStorage and listen to real-time events
   const refreshOrders = () => {
@@ -414,13 +454,14 @@ const CustomerPortal = () => {
                             <span>Call Rider</span>
                           </button>
 
-                          <Link
-                            to={`/order-confirmation/${order.id}`}
-                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 text-xs font-bold text-orange-700 transition"
+                          <button
+                            type="button"
+                            onClick={() => setTrackingOrderId(order.id)}
+                            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 text-xs font-bold text-orange-700 transition cursor-pointer"
                           >
-                            <Receipt className="w-3.5 h-3.5 text-orange-600" />
-                            <span>Live Tracker</span>
-                          </Link>
+                            <Bike className="w-3.5 h-3.5 text-orange-600" />
+                            <span>Live Tracker & Timeline</span>
+                          </button>
                           
                           {isPreparing && (
                             <button
@@ -542,8 +583,16 @@ const CustomerPortal = () => {
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
+                          onClick={() => setTrackingOrderId(order.id)}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-50 hover:bg-orange-100 border border-orange-200 text-orange-700 text-xs font-bold transition cursor-pointer"
+                        >
+                          <Bike className="w-3.5 h-3.5 text-orange-600" />
+                          <span>Track Order</span>
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setSelectedReceiptOrder(order)}
-                          className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition"
+                          className="px-3 py-1.5 rounded-xl border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold transition cursor-pointer"
                         >
                           Bill
                         </button>
@@ -719,6 +768,265 @@ const CustomerPortal = () => {
             >
               Download PDF Invoice
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 5. DEDICATED REAL-TIME ORDER TRACKING MODAL */}
+      {trackingOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fadeIn select-none">
+          <div className="w-full max-w-xl bg-white rounded-3xl p-6 sm:p-7 shadow-2xl border border-slate-200 relative max-h-[90vh] overflow-y-auto space-y-5">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg bg-orange-100 text-orange-800">
+                    #{trackingOrder.id}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">
+                    {trackingOrder.createdAt || 'Just now'}
+                  </span>
+                </div>
+                <h3 className="font-black text-xl text-slate-900 mt-1">
+                  {trackingOrder.restaurantName || 'Restaurant Partner'}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTrackingOrderId(null)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Live Order Status & Estimated Time Banner */}
+            <div className={`p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 border ${
+              trackingOrder.status === 'Delivered'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-900'
+                : trackingOrder.status === 'Cancelled'
+                ? 'bg-rose-50 border-rose-200 text-rose-900'
+                : trackingOrder.status === 'Out for Delivery'
+                ? 'bg-blue-50 border-blue-200 text-blue-900'
+                : 'bg-amber-50 border-amber-200 text-amber-900'
+            }`}>
+              <div className="flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white shrink-0 ${
+                  trackingOrder.status === 'Delivered'
+                    ? 'bg-emerald-600'
+                    : trackingOrder.status === 'Cancelled'
+                    ? 'bg-rose-600'
+                    : trackingOrder.status === 'Out for Delivery'
+                    ? 'bg-blue-600 animate-bounce'
+                    : 'bg-amber-500 animate-pulse'
+                }`}>
+                  {trackingOrder.status === 'Delivered' && <CheckCircle2 className="w-5 h-5" />}
+                  {trackingOrder.status === 'Cancelled' && <AlertCircle className="w-5 h-5" />}
+                  {trackingOrder.status === 'Out for Delivery' && <Bike className="w-5 h-5" />}
+                  {trackingOrder.status === 'Preparing' && <ChefHat className="w-5 h-5" />}
+                </div>
+                <div>
+                  <span className="text-[10px] font-black uppercase tracking-wider block opacity-75">
+                    Live Order Status
+                  </span>
+                  <h4 className="font-black text-base">
+                    {trackingOrder.status === 'Delivered' ? 'Order Delivered Successfully' :
+                     trackingOrder.status === 'Cancelled' ? 'Order Cancelled' :
+                     trackingOrder.status === 'Out for Delivery' ? 'Out for Delivery' :
+                     'Kitchen Preparing Your Food'}
+                  </h4>
+                </div>
+              </div>
+
+              <div className="text-left sm:text-right">
+                <span className="text-[10px] uppercase font-bold opacity-75 block">Estimated Arrival</span>
+                <span className="text-sm font-black flex items-center gap-1 sm:justify-end">
+                  <Clock className="w-3.5 h-3.5" />
+                  {trackingOrder.status === 'Delivered' ? (trackingOrder.deliveredAt ? `Delivered at ${trackingOrder.deliveredAt}` : 'Delivered on time') :
+                   trackingOrder.status === 'Cancelled' ? 'Cancelled' :
+                   trackingOrder.status === 'Out for Delivery' ? '10 - 15 mins remaining' :
+                   (trackingOrder.estimatedDeliveryTime || '20 - 25 mins remaining')}
+                </span>
+              </div>
+            </div>
+
+            {/* ORDER TRACKING TIMELINE */}
+            <div className="space-y-3 p-4 bg-slate-50/70 rounded-2xl border border-slate-100">
+              <span className="text-[11px] font-black uppercase text-slate-400 tracking-wider block">
+                Order Tracking Timeline
+              </span>
+
+              {trackingOrder.status === 'Cancelled' ? (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs space-y-1">
+                  <div className="flex items-center gap-2 font-bold">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>Order Cancelled & Refund Initiated</span>
+                  </div>
+                  <p className="text-[11px] text-rose-600 pl-6">
+                    This order was cancelled. 100% refund of ₹{trackingOrder.totalAmount} will be credited back to your original payment mode.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-4 gap-2 text-center">
+                  {/* Step 1: Confirmed */}
+                  <div className="flex flex-col items-center space-y-1.5">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                      <CheckCircle2 className="w-4 h-4" />
+                    </div>
+                    <span className="text-[11px] font-black text-slate-800">Confirmed</span>
+                    <span className="text-[9px] text-slate-400">Accepted</span>
+                  </div>
+
+                  {/* Step 2: Preparing */}
+                  <div className="flex flex-col items-center space-y-1.5">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
+                      trackingOrder.status === 'Preparing'
+                        ? 'bg-amber-500 text-white animate-pulse shadow-md shadow-amber-500/30'
+                        : (trackingOrder.status === 'Out for Delivery' || trackingOrder.status === 'Delivered')
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-slate-200 text-slate-400'
+                    }`}>
+                      <ChefHat className="w-4 h-4" />
+                    </div>
+                    <span className={`text-[11px] font-black ${trackingOrder.status === 'Preparing' ? 'text-amber-700' : (trackingOrder.status === 'Out for Delivery' || trackingOrder.status === 'Delivered') ? 'text-slate-800' : 'text-slate-400'}`}>
+                      Preparing
+                    </span>
+                    <span className="text-[9px] text-slate-400">
+                      {trackingOrder.status === 'Preparing' ? 'Cooking now' : 'Kitchen done'}
+                    </span>
+                  </div>
+
+                  {/* Step 3: Out for Delivery */}
+                  <div className="flex flex-col items-center space-y-1.5">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
+                      trackingOrder.status === 'Out for Delivery'
+                        ? 'bg-blue-600 text-white animate-bounce shadow-md shadow-blue-600/30'
+                        : trackingOrder.status === 'Delivered'
+                        ? 'bg-emerald-600 text-white shadow-xs'
+                        : 'bg-slate-200 text-slate-400'
+                    }`}>
+                      <Bike className="w-4 h-4" />
+                    </div>
+                    <span className={`text-[11px] font-black ${trackingOrder.status === 'Out for Delivery' ? 'text-blue-700' : trackingOrder.status === 'Delivered' ? 'text-slate-800' : 'text-slate-400'}`}>
+                      On The Way
+                    </span>
+                    <span className="text-[9px] text-slate-400">
+                      {trackingOrder.status === 'Out for Delivery' ? 'Rider heading' : trackingOrder.status === 'Delivered' ? 'Arrived' : 'Waiting pickup'}
+                    </span>
+                  </div>
+
+                  {/* Step 4: Delivered */}
+                  <div className="flex flex-col items-center space-y-1.5">
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition ${
+                      trackingOrder.status === 'Delivered'
+                        ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                        : 'bg-slate-200 text-slate-400'
+                    }`}>
+                      <ShieldCheck className="w-4 h-4" />
+                    </div>
+                    <span className={`text-[11px] font-black ${trackingOrder.status === 'Delivered' ? 'text-emerald-700' : 'text-slate-400'}`}>
+                      Delivered
+                    </span>
+                    <span className="text-[9px] text-slate-400">
+                      {trackingOrder.status === 'Delivered' ? 'Handed over' : 'Doorstep drop'}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Delivery Partner Assigned Card */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black">
+                  <Bike className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="font-black text-slate-900">{trackingOrder.deliveryPartner?.name || 'K. Suresh Kumar'}</span>
+                    <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">★ 4.9</span>
+                  </div>
+                  <span className="text-[11px] text-slate-500 block">{trackingOrder.deliveryPartner?.vehicle || 'Hero Splendor (TS 09 EA 4421)'}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => toast.info(`Calling delivery hero Suresh at +91 98490 12345... 📞`)}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold transition flex items-center gap-1 text-[11px] cursor-pointer"
+                >
+                  <Phone className="w-3 h-3 text-emerald-600" />
+                  <span>Call Rider</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => toast.success(`Message sent to rider! 💬`)}
+                  className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-slate-800 font-bold transition flex items-center gap-1 text-[11px] cursor-pointer"
+                >
+                  <MessageSquare className="w-3 h-3 text-slate-600" />
+                  <span>Message</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Destination Address */}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 text-xs flex items-start gap-2.5">
+              <MapPin className="w-4 h-4 text-orange-600 shrink-0 mt-0.5" />
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Delivery Address</span>
+                <span className="font-bold text-slate-800">{trackingOrder.deliveryAddress}</span>
+                <span className="text-[11px] text-slate-500 block mt-0.5">Receiver: {trackingOrder.customerName} ({trackingOrder.customerPhone})</span>
+              </div>
+            </div>
+
+            {/* Itemized Order Details */}
+            <div>
+              <span className="text-[11px] font-black uppercase text-slate-400 tracking-wider block mb-2">
+                Ordered Dishes & Bill Breakdown
+              </span>
+              <div className="space-y-1.5 divide-y divide-slate-100 max-h-40 overflow-y-auto">
+                {trackingOrder.items?.map((item, idx) => (
+                  <div key={idx} className="pt-1.5 flex justify-between items-center text-xs">
+                    <span className="text-slate-800 font-bold">
+                      {item.qty}x {item.name}
+                    </span>
+                    <span className="font-mono font-bold text-slate-900">
+                      ₹{item.price * item.qty}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Total Amount Paid ({trackingOrder.paymentMethod || 'UPI'})</span>
+                  <span className="text-lg font-black text-orange-600">₹{trackingOrder.totalAmount}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Link
+                    to={`/order-confirmation/${trackingOrder.id}`}
+                    className="px-3.5 py-2 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 font-bold text-xs border border-orange-200 transition flex items-center gap-1.5"
+                  >
+                    <span>Full Screen Tracker</span>
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleReorder(trackingOrder);
+                      setTrackingOrderId(null);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-black text-xs transition shadow-md shadow-orange-600/20 active:scale-95 cursor-pointer flex items-center gap-1.5"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reorder</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

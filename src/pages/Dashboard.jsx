@@ -185,34 +185,44 @@ const Dashboard = () => {
     });
   }, [orders, searchQuery, statusFilter]);
 
-  // Real-Time Action: Advance Order Status
-  const handleAdvanceStatus = (orderId) => {
-    setOrders((prev) =>
-      prev.map((order) => {
-        if (order.id !== orderId) return order;
+  // Real-Time Action: Update Order Status (Directly supports all 4: Preparing, Out for Delivery, Delivered, Cancelled)
+  const handleUpdateOrderStatus = (orderId, newStatus) => {
+    let statusMessage = '';
+    if (newStatus === 'Preparing') statusMessage = 'Kitchen is now preparing the food! 👨‍🍳';
+    else if (newStatus === 'Out for Delivery') statusMessage = 'Order is now Out for Delivery! 🛵';
+    else if (newStatus === 'Delivered') statusMessage = 'Order marked as Delivered! 🎉';
+    else if (newStatus === 'Cancelled') statusMessage = 'Order has been marked as Cancelled. ⚠️';
 
-        if (order.status === 'Preparing') {
-          toast.info(`Order #${order.id} is now Out for Delivery! 🛵`);
-          return { ...order, status: 'Out for Delivery' };
-        }
-        if (order.status === 'Out for Delivery') {
-          toast.success(`Order #${order.id} marked as Delivered! 🎉`);
-          return { ...order, status: 'Delivered' };
-        }
-        return order;
-      })
-    );
-  };
+    const updated = orders.map((order) => {
+      if (order.id !== orderId) return order;
+      return {
+        ...order,
+        status: newStatus,
+        updatedAt: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+        deliveredAt: newStatus === 'Delivered' ? (order.deliveredAt || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })) : order.deliveredAt,
+        cancelledAt: newStatus === 'Cancelled' ? (order.cancelledAt || new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })) : order.cancelledAt
+      };
+    });
 
-  // Real-Time Action: Cancel an Order
-  const handleCancelOrder = (orderId) => {
-    setOrders((prev) =>
-      prev.map((order) => {
-        if (order.id !== orderId) return order;
-        toast.warn(`Order #${order.id} has been cancelled.`);
-        return { ...order, status: 'Cancelled' };
-      })
-    );
+    setOrders(updated);
+    try {
+      localStorage.setItem('food_delivery_orders', JSON.stringify(updated));
+      window.dispatchEvent(new Event('food_delivery_orders_updated'));
+    } catch (e) {
+      console.error(e);
+    }
+
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder((prev) => (prev ? { ...prev, status: newStatus } : null));
+    }
+
+    if (newStatus === 'Delivered') {
+      toast.success(`Order #${orderId}: ${statusMessage}`);
+    } else if (newStatus === 'Cancelled') {
+      toast.warn(`Order #${orderId}: ${statusMessage}`);
+    } else {
+      toast.info(`Order #${orderId}: ${statusMessage}`);
+    }
   };
 
   // Real-Time Action: Simulate a live incoming mock order (Increases 0 to 1, 2...)
@@ -230,16 +240,33 @@ const Dashboard = () => {
     const randomDish = sampleDishes[Math.floor(Math.random() * sampleDishes.length)];
     const randomId = `CRV-${Math.floor(1000 + Math.random() * 9000)}`;
 
+    const nowMinutes = 25;
+    const arrivalDate = new Date(Date.now() + nowMinutes * 60000);
+    const estimatedArrival = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     const newOrderObj = {
       id: randomId,
       customerName: randomCustomer,
       customerPhone: '+91 98' + Math.floor(10000000 + Math.random() * 90000000),
       deliveryAddress: 'Flat 402, Jubilee Hills, Hyderabad',
       restaurantName: randomDish.rest,
-      items: [{ name: randomDish.name, qty: 1, price: randomDish.price }],
-      totalAmount: randomDish.price,
+      items: [{ name: randomDish.name, qty: 1, price: randomDish.price, isVeg: false }],
+      totalAmount: randomDish.price + 40,
+      subtotal: randomDish.price,
+      deliveryFee: 35,
+      platformFee: 5,
+      gstTax: Math.round(randomDish.price * 0.05),
       status: 'Preparing',
       paymentMethod: 'UPI',
+      estimatedDeliveryTime: '25-30 mins',
+      estimatedArrival,
+      deliveryPartner: {
+        name: 'K. Suresh Kumar',
+        phone: '+91 98490 12345',
+        vehicle: 'Hero Splendor (TS 09 EA 4421)',
+        rating: 4.9,
+        status: 'Assigned & Heading to Kitchen'
+      },
       createdAt: 'Just now',
       timestamp: Date.now()
     };
@@ -893,46 +920,33 @@ const Dashboard = () => {
 
                       <td className="py-3.5 px-4 text-right">
                         <div
-                          className="flex items-center justify-end gap-1.5"
+                          className="flex items-center justify-end gap-2"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {order.status === 'Preparing' && (
-                            <button
-                              type="button"
-                              onClick={() => handleAdvanceStatus(order.id)}
-                              className="px-2.5 py-1 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] border border-blue-200 transition cursor-pointer"
-                              title="Dispatch order for delivery"
-                            >
-                              Dispatch 🛵
-                            </button>
-                          )}
-
-                          {order.status === 'Out for Delivery' && (
-                            <button
-                              type="button"
-                              onClick={() => handleAdvanceStatus(order.id)}
-                              className="px-2.5 py-1 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-[11px] border border-emerald-200 transition cursor-pointer"
-                              title="Mark as delivered"
-                            >
-                              Deliver ✅
-                            </button>
-                          )}
-
-                          {order.status !== 'Delivered' && order.status !== 'Cancelled' && (
-                            <button
-                              type="button"
-                              onClick={() => handleCancelOrder(order.id)}
-                              className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                              title="Cancel order"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          )}
+                          <select
+                            value={order.status}
+                            onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                            className={`px-2.5 py-1 rounded-xl text-[11px] font-bold border cursor-pointer focus:outline-none focus:ring-2 transition ${
+                              order.status === 'Preparing'
+                                ? 'bg-amber-50 text-amber-800 border-amber-300 focus:ring-amber-200'
+                                : order.status === 'Out for Delivery'
+                                ? 'bg-blue-50 text-blue-800 border-blue-300 focus:ring-blue-200'
+                                : order.status === 'Delivered'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-300 focus:ring-emerald-200'
+                                : 'bg-rose-50 text-rose-800 border-rose-300 focus:ring-rose-200'
+                            }`}
+                            title="Update Live Order Status (Real-time sync to Customer)"
+                          >
+                            <option value="Preparing">👨‍🍳 Preparing</option>
+                            <option value="Out for Delivery">🛵 Out for Delivery</option>
+                            <option value="Delivered">✅ Delivered</option>
+                            <option value="Cancelled">❌ Cancelled</option>
+                          </select>
 
                           <button
                             type="button"
                             onClick={() => setSelectedOrder(order)}
-                            className="px-2 py-1 rounded-lg text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition cursor-pointer text-[11px] font-semibold"
+                            className="px-2.5 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer text-[11px] font-bold"
                           >
                             Details
                           </button>
@@ -1181,21 +1195,71 @@ const Dashboard = () => {
               <span className="text-lg font-black text-orange-600">₹{selectedOrder.totalAmount}</span>
             </div>
 
-            {/* Status Change CTA in modal */}
-            {selectedOrder.status !== 'Delivered' && selectedOrder.status !== 'Cancelled' && (
-              <div className="pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleAdvanceStatus(selectedOrder.id);
-                    setSelectedOrder(null);
-                  }}
-                  className="w-full py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-md shadow-orange-600/20 transition cursor-pointer"
-                >
-                  {selectedOrder.status === 'Preparing' ? 'Dispatch for Delivery 🛵' : 'Mark as Delivered ✅'}
-                </button>
+            {/* Estimated Delivery Time in Modal */}
+            <div className="p-3 rounded-2xl bg-orange-50 border border-orange-100 flex items-center justify-between text-xs mb-4">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-orange-600 block">Estimated Arrival</span>
+                <span className="font-bold text-slate-900">{selectedOrder.estimatedDeliveryTime || '25-30 mins'} (by {selectedOrder.estimatedArrival || 'Soon'})</span>
               </div>
-            )}
+              <span className="px-2.5 py-1 rounded-xl bg-white text-orange-700 font-extrabold text-[11px] border border-orange-200">
+                {selectedOrder.status}
+              </span>
+            </div>
+
+            {/* Delivery Partner Info */}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-between text-xs mb-4">
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block">Assigned Rider</span>
+                <span className="font-bold text-slate-800">{selectedOrder.deliveryPartner?.name || 'K. Suresh Kumar'} • {selectedOrder.deliveryPartner?.vehicle || 'Hero Splendor'}</span>
+              </div>
+              <span className="text-emerald-700 font-bold text-[11px]">★ 4.9 Verified</span>
+            </div>
+
+            {/* Live Order Status Controls Bar */}
+            <div className="p-3.5 rounded-2xl bg-slate-100 border border-slate-200 mb-4 space-y-2">
+              <span className="text-[11px] font-black uppercase text-slate-600 tracking-wider block">
+                Update Live Order Status (Real-Time Customer Sync)
+              </span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {[
+                  { id: 'Preparing', label: 'Preparing', icon: '👨‍🍳' },
+                  { id: 'Out for Delivery', label: 'Out for Delivery', icon: '🛵' },
+                  { id: 'Delivered', label: 'Delivered', icon: '✅' },
+                  { id: 'Cancelled', label: 'Cancelled', icon: '❌' }
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => handleUpdateOrderStatus(selectedOrder.id, st.id)}
+                    className={`py-2 px-1.5 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1 cursor-pointer ${
+                      selectedOrder.status === st.id
+                        ? st.id === 'Delivered'
+                          ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                          : st.id === 'Cancelled'
+                          ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30'
+                          : st.id === 'Out for Delivery'
+                          ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
+                          : 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
+                        : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    <span>{st.icon}</span>
+                    <span className="truncate">{st.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Direct Link to Live Customer Tracking View */}
+            <div className="pt-1">
+              <Link
+                to={`/order-confirmation/${selectedOrder.id}`}
+                className="w-full py-2.5 px-3 rounded-xl bg-orange-50 hover:bg-orange-100 text-orange-700 text-xs font-bold transition flex items-center justify-center gap-1.5 border border-orange-200 text-center"
+              >
+                <span>View Full Customer Tracking Screen</span>
+                <ArrowUpRight className="w-3.5 h-3.5 text-orange-600" />
+              </Link>
+            </div>
           </div>
         </div>
       )}
