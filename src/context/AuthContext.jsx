@@ -77,6 +77,7 @@ export const AuthProvider = ({ children }) => {
         phone: DEFAULT_USERS[0].phone,
         role: DEFAULT_USERS[0].role,
         address: DEFAULT_USERS[0].address,
+        restaurantName: DEFAULT_USERS[0].restaurantName,
         avatar: DEFAULT_USERS[0].avatar,
         loggedInAt: new Date().toISOString()
       };
@@ -125,7 +126,8 @@ export const AuthProvider = ({ children }) => {
         email: user.email,
         phone: user.phone || '9876543210',
         role: user.role || 'Customer',
-        address: user.address || 'Hyderabad, Telangana',
+        address: user.address || (user.role === 'Admin' ? 'Plot 18, Software Units Layout, HITEC City, Hyderabad - 500081' : 'Flat 402, Lotus Residency, Road No. 36, Jubilee Hills, Hyderabad'),
+        restaurantName: user.restaurantName || (user.role === 'Admin' ? 'The Royal Spice Kitchen' : ''),
         avatar: user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(user.name)}`,
         loggedInAt: new Date().toISOString()
       };
@@ -246,11 +248,50 @@ export const AuthProvider = ({ children }) => {
       role: nextRole,
       name: demoUser.name,
       email: demoUser.email,
+      phone: demoUser.phone,
+      address: demoUser.address,
+      restaurantName: demoUser.restaurantName,
       avatar: demoUser.avatar
     };
     setCurrentUser(updated);
     toast.info(`Switched to ${nextRole} View! 🔄`);
     return updated;
+  };
+
+  // Update Profile Handler (Name, Email, Phone, Avatar, Address)
+  const updateUserProfile = (updatedData) => {
+    if (!currentUser) return { success: false, message: 'No active user session found.' };
+
+    const updatedUser = {
+      ...currentUser,
+      ...updatedData
+    };
+
+    setCurrentUser(updatedUser);
+
+    // Sync registeredUsers array
+    setRegisteredUsers((prev) =>
+      prev.map((u) => {
+        if (u.id === currentUser.id || (u.email && u.email.toLowerCase() === currentUser.email?.toLowerCase())) {
+          return { ...u, ...updatedData };
+        }
+        return u;
+      })
+    );
+
+    // Persist immediately in localStorage
+    try {
+      localStorage.setItem('food_delivery_user', JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event('food_delivery_user_updated'));
+    } catch (e) {
+      console.error('Failed to sync updated user to localStorage:', e);
+    }
+
+    return {
+      success: true,
+      message: 'Profile updated successfully! ✨',
+      user: updatedUser
+    };
   };
 
   // Logout Handler
@@ -272,6 +313,7 @@ export const AuthProvider = ({ children }) => {
         register,
         forgotPassword,
         switchRole,
+        updateUserProfile,
         logout
       }}
     >

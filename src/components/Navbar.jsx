@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
@@ -6,7 +6,6 @@ import { toast } from 'react-toastify';
 import {
   ChefHat,
   Clock,
-  Zap,
   LogOut,
   Menu,
   X,
@@ -16,17 +15,35 @@ import {
   ShoppingBag,
   Bike,
   User,
-  UtensilsCrossed
+  UtensilsCrossed,
+  MapPin,
+  ChevronDown,
+  RefreshCw
 } from 'lucide-react';
 
-const Navbar = ({ onSimulateOrder }) => {
-  const { currentUser, logout } = useAuth();
+const Navbar = () => {
+  const { currentUser, switchRole, logout } = useAuth();
   const { itemCount, setIsCartOpen } = useCart();
   const location = useLocation();
   const navigate = useNavigate();
 
   // Mobile Menu State
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Profile Dropdown Menu State
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const profileDropdownRef = useRef(null);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleOutsideClick = (e) => {
+      if (profileDropdownRef.current && !profileDropdownRef.current.contains(e.target)) {
+        setIsProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
 
   // Live Clock Ticker
   const [currentDateTime, setCurrentDateTime] = useState('');
@@ -52,56 +69,6 @@ const Navbar = ({ onSimulateOrder }) => {
 
   const isAdmin = currentUser?.role === 'Admin';
 
-  // Global Mock Order Simulator (Admin feature)
-  const handleQuickOrder = () => {
-    if (onSimulateOrder) {
-      onSimulateOrder();
-      return;
-    }
-
-    const customerNames = ['Aarav Patel', 'Divya Sen', 'Sameer Khan', 'Kavya Rao', 'Nikhil Joshi', 'Priya Sharma'];
-    const sampleDishes = [
-      { name: 'Special Chicken Dum Biryani', price: 299, rest: 'Paradise Royale Biryani' },
-      { name: 'Wood-Fired Truffle Pizza', price: 380, rest: 'Artisan Crust Pizza Co.' },
-      { name: 'Double Smash Gourmet Burger', price: 249, rest: 'Burger District & Co.' },
-      { name: 'Paneer Butter Masala & Naan', price: 310, rest: 'Punjabi Rasoi Dhaba' },
-      { name: 'Belgian Chocolate Waffle', price: 220, rest: 'The Belgian Waffle Club' }
-    ];
-
-    const randomCustomer = customerNames[Math.floor(Math.random() * customerNames.length)];
-    const randomDish = sampleDishes[Math.floor(Math.random() * sampleDishes.length)];
-    const randomId = `CRV-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const newOrderObj = {
-      id: randomId,
-      customerName: randomCustomer,
-      customerPhone: '+91 98' + Math.floor(10000000 + Math.random() * 90000000),
-      deliveryAddress: 'Flat 402, Jubilee Hills, Hyderabad',
-      restaurantName: randomDish.rest,
-      restaurantId: 'rest-1',
-      items: [{ name: randomDish.name, qty: 1, price: randomDish.price, isVeg: false }],
-      totalAmount: randomDish.price + 40,
-      subtotal: randomDish.price,
-      deliveryFee: 35,
-      platformFee: 5,
-      status: 'Preparing',
-      paymentMethod: 'UPI',
-      createdAt: 'Just now',
-      timestamp: Date.now()
-    };
-
-    try {
-      const saved = localStorage.getItem('food_delivery_orders');
-      const existing = saved ? JSON.parse(saved) : [];
-      const updated = [newOrderObj, ...(Array.isArray(existing) ? existing : [])];
-      localStorage.setItem('food_delivery_orders', JSON.stringify(updated));
-      window.dispatchEvent(new Event('food_delivery_order_placed'));
-    } catch (e) {
-      console.error(e);
-    }
-
-    toast.success(`⚡ Live Order Placed! #${randomId} from ${randomCustomer} (₹${randomDish.price + 40})`);
-  };
 
   // Logout Handler
   const handleLogout = () => {
@@ -116,6 +83,7 @@ const Navbar = ({ onSimulateOrder }) => {
   const isRestaurantsActive = location.pathname.startsWith('/restaurants');
   const isMenuActive = location.pathname.startsWith('/menu');
   const isCustomerActive = location.pathname === '/customer';
+  const isProfileActive = location.pathname === '/profile';
 
   return (
     <header className="h-16 bg-white border-b border-slate-200 sticky top-0 z-40 px-4 sm:px-6 lg:px-8 flex items-center justify-between shadow-2xs">
@@ -176,6 +144,18 @@ const Navbar = ({ onSimulateOrder }) => {
               <UtensilsCrossed className="w-3.5 h-3.5" />
               <span>Menu Management</span>
             </Link>
+
+            <Link
+              to="/profile"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition duration-200 ${
+                isProfileActive
+                  ? 'bg-white text-orange-600 shadow-xs font-black'
+                  : 'hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>My Profile</span>
+            </Link>
           </>
         ) : (
           <>
@@ -212,7 +192,19 @@ const Navbar = ({ onSimulateOrder }) => {
               }`}
             >
               <Bike className="w-3.5 h-3.5" />
-              <span>My Orders & Live Tracking</span>
+              <span>My Orders</span>
+            </Link>
+
+            <Link
+              to="/profile"
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition duration-200 ${
+                isProfileActive
+                  ? 'bg-white text-orange-600 shadow-xs font-black'
+                  : 'hover:text-slate-900 hover:bg-white/50'
+              }`}
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>My Profile & Addresses</span>
             </Link>
           </>
         )}
@@ -246,44 +238,129 @@ const Navbar = ({ onSimulateOrder }) => {
           </button>
         )}
 
-        {/* Admin Quick Mock Order Simulator Button */}
-        {isAdmin && (
+        {/* Profile Pill with Interactive Dropdown */}
+        <div className="relative" ref={profileDropdownRef}>
           <button
             type="button"
-            onClick={handleQuickOrder}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition shadow-md shadow-orange-600/20 cursor-pointer active:scale-95"
-            title="Create a mock order to test real-time state"
+            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+            className="flex items-center gap-2.5 bg-slate-50 hover:bg-slate-100 px-3 py-1.5 rounded-2xl border border-slate-200 transition cursor-pointer active:scale-98"
+            aria-label="User profile menu"
           >
-            <Zap className="w-3.5 h-3.5 fill-current" />
-            <span>+ Mock Order</span>
+            {currentUser?.avatar ? (
+              <img
+                src={currentUser.avatar}
+                alt={currentUser.name}
+                className="w-7 h-7 rounded-full object-cover border border-orange-300"
+              />
+            ) : (
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-500 to-rose-600 text-white flex items-center justify-center font-bold text-xs">
+                {currentUser?.name?.charAt(0) || 'U'}
+              </div>
+            )}
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-bold text-slate-900 leading-tight max-w-[110px] truncate">
+                {currentUser?.name || (isAdmin ? 'Admin' : 'Customer')}
+              </span>
+              <span className="text-[10px] text-orange-600 font-bold leading-tight flex items-center gap-0.5">
+                {isAdmin ? <ShieldCheck className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
+                {currentUser?.role || (isAdmin ? 'Admin' : 'Customer')}
+              </span>
+            </div>
+            <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180 text-orange-600' : ''}`} />
           </button>
-        )}
 
-        {/* Profile Pill */}
-        <div className="flex items-center gap-2.5 bg-slate-50 px-2.5 py-1 rounded-xl border border-slate-200">
-          {currentUser?.avatar ? (
-            <img
-              src={currentUser.avatar}
-              alt={currentUser.name}
-              className="w-7 h-7 rounded-full object-cover border border-orange-300"
-            />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-orange-500 to-rose-600 text-white flex items-center justify-center font-bold text-xs">
-              {currentUser?.name?.charAt(0) || 'U'}
+          {/* Profile Dropdown Menu */}
+          {isProfileDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-fadeIn divide-y divide-slate-100">
+              
+              {/* User Overview */}
+              <div className="px-4 py-3 bg-slate-50/60 rounded-t-2xl">
+                <p className="text-xs font-black text-slate-900 truncate">{currentUser?.name}</p>
+                <p className="text-[11px] text-slate-500 truncate">{currentUser?.email || 'customer@foodie.com'}</p>
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-800 text-[10px] font-black uppercase tracking-wider">
+                    {currentUser?.role || 'Customer'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 font-medium">● Hyderabad Region</span>
+                </div>
+              </div>
+
+              {/* Menu Links */}
+              <div className="py-1 text-xs">
+                <Link
+                  to="/profile"
+                  onClick={() => setIsProfileDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-orange-50 hover:text-orange-600 text-slate-700 font-bold transition"
+                >
+                  <User className="w-4 h-4 text-orange-600" />
+                  <div>
+                    <span className="block font-black text-slate-900">View & Edit Profile</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Name, phone, avatar</span>
+                  </div>
+                </Link>
+
+                <Link
+                  to="/profile"
+                  onClick={() => setIsProfileDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-orange-50 hover:text-orange-600 text-slate-700 font-bold transition"
+                >
+                  <MapPin className="w-4 h-4 text-orange-600" />
+                  <div>
+                    <span className="block font-black text-slate-900">
+                      {isAdmin ? 'Restaurant Outlet Address' : 'Saved Delivery Addresses'}
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-normal">
+                      {isAdmin ? 'Official outlet location' : 'Manage home & work spots'}
+                    </span>
+                  </div>
+                </Link>
+
+                <Link
+                  to={isAdmin ? "/dashboard" : "/customer"}
+                  onClick={() => setIsProfileDropdownOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 hover:bg-orange-50 hover:text-orange-600 text-slate-700 font-bold transition"
+                >
+                  <Bike className="w-4 h-4 text-orange-600" />
+                  <div>
+                    <span className="block font-black text-slate-900">{isAdmin ? "Admin Operations" : "Orders & Tracking"}</span>
+                    <span className="text-[10px] text-slate-400 font-normal">Live delivery status</span>
+                  </div>
+                </Link>
+              </div>
+
+              {/* Switch Role & Logout */}
+              <div className="py-1 text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    switchRole(isAdmin ? 'Customer' : 'Admin');
+                    setIsProfileDropdownOpen(false);
+                    navigate(isAdmin ? '/customer' : '/dashboard');
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-amber-50 text-slate-700 hover:text-amber-800 font-bold transition cursor-pointer text-left"
+                >
+                  <RefreshCw className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Switch to {isAdmin ? 'Customer View' : 'Admin Mode'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsProfileDropdownOpen(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-4 py-2 hover:bg-rose-50 text-slate-700 hover:text-rose-600 font-bold transition cursor-pointer text-left"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+
             </div>
           )}
-          <div className="flex flex-col text-left">
-            <span className="text-xs font-bold text-slate-900 leading-tight max-w-[110px] truncate">
-              {currentUser?.name || (isAdmin ? 'Admin' : 'Customer')}
-            </span>
-            <span className="text-[10px] text-orange-600 font-bold leading-tight flex items-center gap-0.5">
-              {isAdmin ? <ShieldCheck className="w-2.5 h-2.5" /> : <User className="w-2.5 h-2.5" />}
-              {currentUser?.role || (isAdmin ? 'Admin' : 'Customer')}
-            </span>
-          </div>
         </div>
 
-        {/* Logout Button */}
+        {/* Quick Logout Button */}
         <button
           type="button"
           onClick={handleLogout}
@@ -378,6 +455,17 @@ const Navbar = ({ onSimulateOrder }) => {
                   <UtensilsCrossed className="w-4 h-4 text-orange-600" />
                   <span>Menu Management</span>
                 </Link>
+
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                    isProfileActive ? 'bg-orange-50 text-orange-600 font-black' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <User className="w-4 h-4 text-orange-600" />
+                  <span>My Profile</span>
+                </Link>
               </>
             ) : (
               <>
@@ -413,23 +501,23 @@ const Navbar = ({ onSimulateOrder }) => {
                   <Bike className="w-4 h-4 text-orange-600" />
                   <span>My Orders & Live Tracking</span>
                 </Link>
+
+                <Link
+                  to="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold transition ${
+                    isProfileActive ? 'bg-orange-50 text-orange-600 font-black' : 'text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <User className="w-4 h-4 text-orange-600" />
+                  <span>My Profile & Addresses</span>
+                </Link>
               </>
             )}
           </div>
 
           {/* Actions */}
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={handleQuickOrder}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-600 text-white text-xs font-bold shadow-md shadow-orange-600/20"
-              >
-                <Zap className="w-3.5 h-3.5 fill-current" />
-                <span>Simulate Mock Order</span>
-              </button>
-            )}
-
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-end">
             <button
               type="button"
               onClick={handleLogout}

@@ -105,6 +105,16 @@ function App() {
                   }
                 />
 
+                {/* Dedicated Customer Profile & Delivery Address Management */}
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <CustomerPortal defaultTab="profile" />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Dedicated Swiggy/Zomato Checkout Page */}
                 <Route
                   path="/checkout"

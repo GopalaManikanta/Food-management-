@@ -469,8 +469,8 @@ const MenuManagement = () => {
                       </div>
                     )}
 
-                    {/* Cart Add / Quantity Counter for Both Admin & Customer */}
-                    {item.isAvailable === false ? (
+                    {/* Cart Add / Quantity Counter (Customer Only - Removed for Admin) */}
+                    {!isAdmin && (item.isAvailable === false ? (
                       <span className="px-3 py-2 rounded-xl bg-slate-100 text-slate-400 text-xs font-bold">
                         Unavailable
                       </span>
@@ -501,7 +501,7 @@ const MenuManagement = () => {
                         <Plus className="w-3.5 h-3.5" />
                         <span>ADD</span>
                       </button>
-                    )}
+                    ))}
 
                   </div>
 

@@ -27,8 +27,7 @@ A responsive, production-ready Food Delivery Management & Customer Ordering Plat
 ### 2. Admin Operations Dashboard (`/dashboard`)
 - **Real-Time KPI Counters:** Total Restaurants, Food Items, Total Orders, Active Orders, Delivered Orders, and Unique Customers.
 - **Revenue Summary & Audit:** Gross revenue, platform fee (15%), restaurant payout, and delivery partner pool with period filters (Today, This Week, This Month, All Time) and CSV export.
-- **Live Order Dispatching:** Advance status from `Preparing` ➔ `Out for Delivery` ➔ `Delivered` in real time.
-- **Mock Order Simulator:** Create live test orders on demand.
+- **Real-time Order Processing:** Live order intake from checkout with instant kitchen dispatch.
 - **Quick Actions:** Add food items, onboard restaurants, and reset state.
 
 ### 3. Restaurant Catalog (`/restaurants`)

@@ -18,11 +18,11 @@ import {
   PlusCircle,
   Search,
   X,
-  Zap,
   Flame,
   ArrowUpRight,
   Receipt,
-  Trash2
+  Trash2,
+  User
 } from 'lucide-react';
 
 const Dashboard = () => {
@@ -225,59 +225,6 @@ const Dashboard = () => {
     }
   };
 
-  // Real-Time Action: Simulate a live incoming mock order (Increases 0 to 1, 2...)
-  const handleSimulateLiveOrder = () => {
-    const customerNames = ['Aarav Patel', 'Divya Sen', 'Sameer Khan', 'Kavya Rao', 'Nikhil Joshi', 'Priya Sharma'];
-    const sampleDishes = [
-      { name: 'Special Chicken Dum Biryani', price: 299, rest: 'Paradise Royale' },
-      { name: 'Wood-Fired Truffle Pizza', price: 380, rest: 'Artisan Crust Co.' },
-      { name: 'Double Smash Gourmet Burger', price: 249, rest: 'Burger District' },
-      { name: 'Paneer Butter Masala & Naan', price: 310, rest: 'Punjabi Rasoi' },
-      { name: 'Belgian Chocolate Waffle', price: 220, rest: 'The Dessert Club' }
-    ];
-
-    const randomCustomer = customerNames[Math.floor(Math.random() * customerNames.length)];
-    const randomDish = sampleDishes[Math.floor(Math.random() * sampleDishes.length)];
-    const randomId = `CRV-${Math.floor(1000 + Math.random() * 9000)}`;
-
-    const nowMinutes = 25;
-    const arrivalDate = new Date(Date.now() + nowMinutes * 60000);
-    const estimatedArrival = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    const newOrderObj = {
-      id: randomId,
-      customerName: randomCustomer,
-      customerPhone: '+91 98' + Math.floor(10000000 + Math.random() * 90000000),
-      deliveryAddress: 'Flat 402, Jubilee Hills, Hyderabad',
-      restaurantName: randomDish.rest,
-      items: [{ name: randomDish.name, qty: 1, price: randomDish.price, isVeg: false }],
-      totalAmount: randomDish.price + 40,
-      subtotal: randomDish.price,
-      deliveryFee: 35,
-      platformFee: 5,
-      gstTax: Math.round(randomDish.price * 0.05),
-      status: 'Preparing',
-      paymentMethod: 'UPI',
-      estimatedDeliveryTime: '25-30 mins',
-      estimatedArrival,
-      deliveryPartner: {
-        name: 'K. Suresh Kumar',
-        phone: '+91 98490 12345',
-        vehicle: 'Hero Splendor (TS 09 EA 4421)',
-        rating: 4.9,
-        status: 'Assigned & Heading to Kitchen'
-      },
-      createdAt: 'Just now',
-      timestamp: Date.now()
-    };
-
-    setOrders((prev) => [newOrderObj, ...prev]);
-    // Also increment restaurants if at 0
-    if (totalRestaurants === 0) setTotalRestaurants(1);
-    if (totalFoodItems === 0) setTotalFoodItems(1);
-
-    toast.success(`⚡ Live Order Placed! #${randomId} from ${randomCustomer} (₹${randomDish.price})`);
-  };
 
   // Real-Time Action: Add New Food Item (Increases 0 to 1, 2...)
   const handleCreateFoodItem = (e) => {
@@ -396,7 +343,7 @@ const Dashboard = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col select-none">
       
       {/* 1. PROFESSIONAL UNIFIED NAVBAR */}
-      <Navbar onSimulateOrder={handleSimulateLiveOrder} />
+      <Navbar />
 
       {/* 2. MAIN DASHBOARD CONTENT */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
@@ -416,12 +363,20 @@ const Dashboard = () => {
                 Welcome, {currentUser?.name || 'Admin'}! 👋
               </h2>
               <p className="text-sm text-orange-100 mt-1 max-w-xl">
-                System starts at <b>0</b>. Use the Quick Action cards or click "+ Create Mock Order" to see live counters update in real time!
+                Commercial operations dashboard with live restaurant onboarding, menu controls, and real-time customer order pipeline tracking.
               </p>
             </div>
 
-            {/* Clear All to Zero Button */}
+            {/* Actions: View Profile & Reset to Zero */}
             <div className="flex items-center gap-3">
+              <Link
+                to="/profile"
+                className="px-4 py-2 rounded-2xl bg-white text-orange-600 hover:bg-orange-50 font-black text-xs flex items-center gap-1.5 transition shadow-md shadow-black/10 cursor-pointer active:scale-95"
+                title="View & Edit Profile Details"
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>View Profile</span>
+              </Link>
               <button
                 type="button"
                 onClick={handleClearAllToZero}
@@ -559,23 +514,20 @@ const Dashboard = () => {
             <p className="text-xs text-slate-500 mt-1">Add a dish to increase Total Food Items</p>
           </button>
 
-          {/* Quick Action 2: Simulate Live Order */}
-          <button
-            type="button"
-            onClick={handleSimulateLiveOrder}
-            className="p-5 rounded-3xl bg-white border border-slate-200 hover:border-amber-300 hover:bg-amber-50/30 transition shadow-2xs group text-left cursor-pointer"
+          {/* Quick Action 2: Menu Catalog & Management */}
+          <Link
+            to="/menu"
+            className="p-5 rounded-3xl bg-white border border-slate-200 hover:border-amber-300 hover:bg-amber-50/30 transition shadow-2xs group text-left cursor-pointer block"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="p-3 rounded-2xl bg-amber-100 text-amber-600 group-hover:scale-110 transition">
-                <Zap className="w-5 h-5 fill-current" />
+                <UtensilsCrossed className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800">
-                Live Test
-              </span>
+              <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-amber-600 transition" />
             </div>
-            <h4 className="font-bold text-sm text-slate-900">Create Mock Order</h4>
-            <p className="text-xs text-slate-500 mt-1">Dispatches an active order and updates live table</p>
-          </button>
+            <h4 className="font-bold text-sm text-slate-900">Menu & Dish Catalog</h4>
+            <p className="text-xs text-slate-500 mt-1">Manage dish prices, photos & in-stock status</p>
+          </Link>
 
           {/* Quick Action 3: Add Restaurant Partner */}
           <button
@@ -854,19 +806,25 @@ const Dashboard = () => {
                 <div className="w-16 h-16 rounded-3xl bg-orange-50 text-orange-600 flex items-center justify-center mx-auto mb-3 shadow-inner">
                   <ShoppingBag className="w-8 h-8" />
                 </div>
-                <h4 className="font-black text-lg text-slate-900">No Orders in the System (0)</h4>
+                <h4 className="font-black text-lg text-slate-900">No Customer Orders Yet</h4>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                  The dashboard is currently at zero. Click the button below to create a mock order and watch live tracking in action!
+                  Live orders placed by customers across Hyderabad will appear here in real time with kitchen status controls.
                 </p>
-                <div className="mt-5">
-                  <button
-                    type="button"
-                    onClick={handleSimulateLiveOrder}
+                <div className="mt-5 flex items-center justify-center gap-3">
+                  <Link
+                    to="/menu"
                     className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-lg shadow-orange-600/20 transition cursor-pointer active:scale-95"
                   >
-                    <Zap className="w-4 h-4 fill-current" />
-                    <span>Create First Live Order</span>
-                  </button>
+                    <UtensilsCrossed className="w-4 h-4" />
+                    <span>View Menu Items</span>
+                  </Link>
+                  <Link
+                    to="/customer"
+                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold transition cursor-pointer"
+                  >
+                    <Bike className="w-4 h-4 text-orange-600" />
+                    <span>Customer Portal</span>
+                  </Link>
                 </div>
               </div>
             ) : (

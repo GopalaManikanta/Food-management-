@@ -128,6 +128,30 @@ const Checkout = () => {
     }
   }, [addresses]);
 
+  // Listen to address updates from Customer Profile or other tabs
+  useEffect(() => {
+    const handleSync = () => {
+      try {
+        const stored = localStorage.getItem('food_delivery_saved_addresses');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAddresses(parsed);
+          }
+        }
+      } catch (e) {
+        console.error('Failed to sync addresses:', e);
+      }
+    };
+
+    window.addEventListener('storage', handleSync);
+    window.addEventListener('food_delivery_addresses_updated', handleSync);
+    return () => {
+      window.removeEventListener('storage', handleSync);
+      window.removeEventListener('food_delivery_addresses_updated', handleSync);
+    };
+  }, []);
+
   // 2. Delivery Instructions
   const [selectedInstructions, setSelectedInstructions] = useState([]);
   const [customInstructions, setCustomInstructions] = useState('');
@@ -192,6 +216,12 @@ const Checkout = () => {
     setAddresses(updated);
     setSelectedAddressId(newEntry.id);
     setIsAddingAddress(false);
+    try {
+      localStorage.setItem('food_delivery_saved_addresses', JSON.stringify(updated));
+      window.dispatchEvent(new Event('food_delivery_addresses_updated'));
+    } catch (e) {
+      console.error(e);
+    }
     toast.success(`Address "${newEntry.tag}" added successfully! 📍`);
   };
 
