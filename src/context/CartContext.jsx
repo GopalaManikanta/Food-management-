@@ -16,23 +16,37 @@ export const AVAILABLE_COUPONS = [
   {
     code: 'WELCOME50',
     title: 'Flat ₹50 OFF',
-    description: 'Welcome discount on any order',
+    description: 'Welcome bonus on any order (No min. subtotal)',
     minSubtotal: 0,
     calculate: () => 50
   },
   {
     code: 'CRAVE100',
     title: 'Flat ₹100 OFF',
-    description: 'Special feast treat on orders above ₹399',
+    description: 'Special feast discount on orders above ₹399',
     minSubtotal: 399,
     calculate: () => 100
   },
   {
     code: 'FEAST20',
-    title: '20% OFF (up to ₹150)',
-    description: '20% discount on orders above ₹299',
+    title: '20% OFF (up to ₹120)',
+    description: '20% instant off on orders above ₹299',
     minSubtotal: 299,
-    calculate: (subtotal) => Math.min(150, Math.round(subtotal * 0.2))
+    calculate: (subtotal) => Math.min(120, Math.round(subtotal * 0.2))
+  },
+  {
+    code: 'SWIGGY50',
+    title: '50% OFF (up to ₹100)',
+    description: 'Mega 50% off on orders above ₹199',
+    minSubtotal: 199,
+    calculate: (subtotal) => Math.min(100, Math.round(subtotal * 0.5))
+  },
+  {
+    code: 'PARTY30',
+    title: '30% OFF (up to ₹250)',
+    description: 'Group party discount on orders above ₹699',
+    minSubtotal: 699,
+    calculate: (subtotal) => Math.min(250, Math.round(subtotal * 0.3))
   }
 ];
 
@@ -280,6 +294,7 @@ export const CartProvider = ({ children }) => {
     deliveryAddress,
     deliveryInstructions = '',
     paymentMethod = 'UPI',
+    paymentDetails = null,
     estimatedTime = '30-35 mins'
   }) => {
     // 1. Prevent Empty Cart Checkout Guard
@@ -298,6 +313,9 @@ export const CartProvider = ({ children }) => {
 
     const arrivalDate = new Date(Date.now() + 32 * 60 * 1000);
     const estimatedArrival = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    const generatedTxnId = `TXN_CRV_${Date.now().toString(36).toUpperCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
+    const generatedBankRef = `RRN${Date.now()}`;
 
     const newOrder = {
       id: orderId,
@@ -326,6 +344,13 @@ export const CartProvider = ({ children }) => {
       couponDiscount,
       status: 'Preparing',
       paymentMethod,
+      paymentDetails: paymentDetails || {
+        transactionId: generatedTxnId,
+        bankRef: generatedBankRef,
+        method: paymentMethod,
+        status: paymentMethod === 'COD' ? 'Pending (Pay on Delivery)' : 'Paid Successfully',
+        paidAt: new Date().toISOString()
+      },
       estimatedDeliveryTime: estimatedTime,
       estimatedArrival,
       deliveryPartner: {

@@ -498,6 +498,39 @@ const OrderConfirmation = () => {
               <span className="text-orange-600 text-base">₹{order.totalAmount}</span>
             </div>
           </div>
+
+          {/* Payment Verification / Transaction Details */}
+          {order.paymentDetails && (
+            <div className="mt-4 p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs">
+              <div className="flex items-center justify-between font-bold pb-2 border-b border-emerald-100">
+                <span className="flex items-center gap-1.5 text-emerald-800">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Payment Verified ({order.paymentDetails.method || order.paymentMethod})
+                </span>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-200 text-emerald-900 text-[10px] font-black uppercase tracking-wider">
+                  {order.paymentDetails.status || 'PAID'}
+                </span>
+              </div>
+              <div className="mt-2 space-y-1 text-slate-600 text-[11px]">
+                <div className="flex justify-between">
+                  <span>Transaction ID:</span>
+                  <span className="font-mono font-bold text-slate-900">{order.paymentDetails.transactionId}</span>
+                </div>
+                {order.paymentDetails.bankRef && (
+                  <div className="flex justify-between">
+                    <span>Bank Ref (RRN):</span>
+                    <span className="font-mono font-bold text-slate-900">{order.paymentDetails.bankRef}</span>
+                  </div>
+                )}
+                {order.paymentDetails.paidAt && (
+                  <div className="flex justify-between">
+                    <span>Paid At:</span>
+                    <span className="text-slate-700">{new Date(order.paymentDetails.paidAt).toLocaleString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* 6. BOTTOM ACTION BUTTONS */}
