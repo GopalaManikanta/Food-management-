@@ -22,8 +22,77 @@ import {
   ArrowUpRight,
   Receipt,
   Trash2,
-  User
+  User,
+  Clock
 } from 'lucide-react';
+
+// Helper: Format accurate order timing with dynamic relative and exact time
+const formatOrderTiming = (order) => {
+  if (!order) return { time: 'Recent', date: '', relative: '', full: 'Recent' };
+
+  const ts = typeof order.timestamp === 'number'
+    ? order.timestamp
+    : (order.placedAt ? new Date(order.placedAt).getTime() : (order.paymentDetails?.paidAt ? new Date(order.paymentDetails.paidAt).getTime() : null));
+
+  if (ts && !isNaN(ts)) {
+    const now = Date.now();
+    const diffMs = now - ts;
+    const diffSecs = Math.max(0, Math.floor(diffMs / 1000));
+    const diffMins = Math.floor(diffSecs / 60);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+
+    const timeStr = new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date(ts).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+    let relativeStr = '';
+    if (diffMins < 1) {
+      relativeStr = 'Just now';
+    } else if (diffMins < 60) {
+      relativeStr = `${diffMins}m ago`;
+    } else if (diffHours < 24) {
+      relativeStr = `${diffHours}h ago`;
+    } else if (diffDays === 1) {
+      relativeStr = 'Yesterday';
+    } else {
+      relativeStr = `${diffDays}d ago`;
+    }
+
+    return {
+      time: timeStr,
+      date: dateStr,
+      relative: relativeStr,
+      full: `${dateStr}, ${timeStr} (${relativeStr})`
+    };
+  }
+
+  const fallback = (order.createdAt && order.createdAt !== 'Just now') ? order.createdAt : 'Recent';
+  return {
+    time: fallback,
+    date: '',
+    relative: 'Recent',
+    full: fallback
+  };
+};
+
+// Helper: Normalize orders to ensure valid timestamps and timing formats
+const normalizeOrderTiming = (order) => {
+  const ts = typeof order.timestamp === 'number'
+    ? order.timestamp
+    : (order.placedAt ? new Date(order.placedAt).getTime() : (order.paymentDetails?.paidAt ? new Date(order.paymentDetails.paidAt).getTime() : Date.now()));
+
+  const d = new Date(ts);
+  const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const dateStr = d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+
+  return {
+    ...order,
+    timestamp: ts,
+    placedTime: order.placedTime || timeStr,
+    placedDate: order.placedDate || dateStr,
+    createdAt: (!order.createdAt || order.createdAt === 'Just now') ? `Today, ${timeStr}` : order.createdAt
+  };
+};
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -37,13 +106,22 @@ const Dashboard = () => {
       const saved = localStorage.getItem('food_delivery_orders');
       if (saved) {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
+        if (Array.isArray(parsed)) return parsed.map(normalizeOrderTiming);
       }
       return [];
     } catch {
       return [];
     }
   });
+
+  // Live timer tick so relative order timings (e.g. "Just now", "2m ago", "15m ago") update automatically
+  const [, setTimeTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeTick((t) => t + 1);
+    }, 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   // 2. Real-Time Counters (Starts at ZERO: 0)
   const [totalFoodItems, setTotalFoodItems] = useState(() => {
@@ -103,7 +181,7 @@ const Dashboard = () => {
         const saved = localStorage.getItem('food_delivery_orders');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (Array.isArray(parsed)) setOrders(parsed);
+          if (Array.isArray(parsed)) setOrders(parsed.map(normalizeOrderTiming));
         }
       } catch (e) {
         console.error(e);
@@ -872,8 +950,21 @@ const Dashboard = () => {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-700">{order.paymentMethod}</div>
-                        <div className="text-[10px] text-slate-400">{order.createdAt}</div>
+                        <div className="font-bold text-slate-800">{order.paymentMethod}</div>
+                        {(() => {
+                          const timing = formatOrderTiming(order);
+                          return (
+                            <div className="text-[11px] flex items-center gap-1.5 mt-1">
+                              <Clock className="w-3 h-3 text-orange-500 shrink-0" />
+                              <span className="font-bold text-slate-900">{timing.time}</span>
+                              {timing.relative && (
+                                <span className="text-[10px] font-bold text-orange-700 bg-orange-50 px-1.5 py-0.2 rounded-md border border-orange-200">
+                                  {timing.relative}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
                       </td>
 
                       <td className="py-3.5 px-4 text-right">
@@ -1111,6 +1202,15 @@ const Dashboard = () => {
               <div>
                 <span className="text-xs font-mono font-bold text-slate-400">Order #{selectedOrder.id}</span>
                 <h3 className="font-black text-xl text-slate-900 mt-0.5">{selectedOrder.restaurantName}</h3>
+                {(() => {
+                  const timing = formatOrderTiming(selectedOrder);
+                  return (
+                    <div className="flex items-center gap-1.5 text-xs text-slate-500 mt-1">
+                      <Clock className="w-3.5 h-3.5 text-orange-500" />
+                      <span>Placed on: <strong className="text-slate-800">{timing.full}</strong></span>
+                    </div>
+                  );
+                })()}
               </div>
               <div className="mr-8">
                 {getStatusBadge(selectedOrder.status)}

@@ -198,7 +198,9 @@ const OrderConfirmation = () => {
                   <span>Order #{order.id}</span>
                   <Copy className="w-3.5 h-3.5 text-emerald-300" />
                 </button>
-                <span className="text-xs text-emerald-100">• Placed Just now</span>
+                <span className="text-xs text-emerald-100">
+                  • Placed {order.placedTime ? `at ${order.placedTime}` : (order.createdAt || 'Just now')}
+                </span>
               </div>
             </div>
           </div>

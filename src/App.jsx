@@ -105,6 +105,24 @@ function App() {
                   }
                 />
 
+                {/* Dedicated Order History Routes */}
+                <Route
+                  path="/orders"
+                  element={
+                    <ProtectedRoute>
+                      <CustomerPortal defaultTab="history" />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/history"
+                  element={
+                    <ProtectedRoute>
+                      <CustomerPortal defaultTab="history" />
+                    </ProtectedRoute>
+                  }
+                />
+
                 {/* Dedicated Customer Profile & Delivery Address Management */}
                 <Route
                   path="/profile"

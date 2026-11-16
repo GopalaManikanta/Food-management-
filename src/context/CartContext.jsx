@@ -220,6 +220,36 @@ export const CartProvider = ({ children }) => {
     toast.info('Basket cleared! 🗑️', { autoClose: 1500 });
   }, []);
 
+  // 1-Click Intelligent Reorder
+  const reorderOrder = useCallback((order) => {
+    if (!order?.items || order.items.length === 0) {
+      toast.warning('No items found to reorder.');
+      return;
+    }
+    const restObj = {
+      id: order.restaurantId || 'rest-1',
+      name: order.restaurantName || 'Partner Kitchen',
+      deliveryCharges: order.deliveryFee === 0 ? 'Free' : '₹35'
+    };
+    setActiveRestaurant(restObj);
+
+    const reorderedItems = order.items.map((item, idx) => ({
+      id: item.id || `reorder-${Date.now()}-${idx}`,
+      name: item.name,
+      price: Number(item.price) || 0,
+      isVeg: item.isVeg !== undefined ? item.isVeg : true,
+      image: item.image || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80',
+      restaurantName: restObj.name,
+      qty: Number(item.qty) || 1
+    }));
+
+    setCartItems(reorderedItems);
+    setIsCartOpen(true);
+    toast.success(`Reordered ${reorderedItems.length} items from "${restObj.name}"! 🛍️`, {
+      autoClose: 2000
+    });
+  }, []);
+
   // Financial Calculations
   const itemCount = useMemo(() => {
     return cartItems.reduce((total, item) => total + item.qty, 0);
@@ -311,7 +341,13 @@ export const CartProvider = ({ children }) => {
       ? restaurantNames[0]
       : `${restaurantNames[0]} (+${restaurantNames.length - 1} more)`;
 
-    const arrivalDate = new Date(Date.now() + 32 * 60 * 1000);
+    const now = new Date();
+    const orderTimestamp = now.getTime();
+    const placedTimeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const placedDateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
+    const formattedCreatedAt = `Today, ${placedTimeStr}`;
+
+    const arrivalDate = new Date(orderTimestamp + 32 * 60 * 1000);
     const estimatedArrival = arrivalDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const generatedTxnId = `TXN_CRV_${Date.now().toString(36).toUpperCase()}_${Math.floor(1000 + Math.random() * 9000)}`;
@@ -349,7 +385,7 @@ export const CartProvider = ({ children }) => {
         bankRef: generatedBankRef,
         method: paymentMethod,
         status: paymentMethod === 'COD' ? 'Pending (Pay on Delivery)' : 'Paid Successfully',
-        paidAt: new Date().toISOString()
+        paidAt: now.toISOString()
       },
       estimatedDeliveryTime: estimatedTime,
       estimatedArrival,
@@ -360,8 +396,11 @@ export const CartProvider = ({ children }) => {
         rating: 4.9,
         status: 'Assigned & Heading to Kitchen'
       },
-      createdAt: 'Just now',
-      timestamp: Date.now()
+      placedAt: now.toISOString(),
+      placedTime: placedTimeStr,
+      placedDate: placedDateStr,
+      createdAt: formattedCreatedAt,
+      timestamp: orderTimestamp
     };
 
     try {
@@ -408,7 +447,8 @@ export const CartProvider = ({ children }) => {
         applyCoupon,
         removeCoupon,
         availableCoupons: AVAILABLE_COUPONS,
-        placeOrder
+        placeOrder,
+        reorderOrder
       }}
     >
       {children}
